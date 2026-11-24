@@ -1,0 +1,59 @@
+# StaRbuSt 의 설치 파일을 운영체제별로 만든다: macOS(.dmg, Apple Silicon 과 Intel), Windows(setup.exe).
+# 저장소의 Actions 탭에서 직접 실행하면 결과를 실행 기록의 Artifacts 에서 받는다.
+# v 로 시작하는 태그(v1.0.0)를 올리면 같은 파일이 Releases 의 초안(draft)에 붙는다. 초안은 내용을 확인한 뒤 직접 공개한다.
+# 태그는 starbust/__init__.py 의 __version__ 과 같아야 한다(다르면 build.py 가 멈춘다).
+name: build-app
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ['v*']
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [macos-14, macos-15-intel, windows-latest]
+    runs-on: ${{ matrix.os }}
+    # Intel Mac 용은 필요한 패키지의 배포 파일이 없어지면 만들지 못할 수 있다. 그때도 나머지 설치 파일은 나오게 한다.
+    continue-on-error: ${{ matrix.os == 'macos-15-intel' }}
+    env:
+      PYTHONUTF8: '1'
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: 필요한 패키지 설치
+        run: python -m pip install pyinstaller numpy numba plotly nicegui pytest
+      - name: Inno Setup 설치 (Windows)
+        if: runner.os == 'Windows'
+        run: choco install innosetup --no-progress -y
+      - name: 자동 시험
+        run: python -m pytest tests -q
+      - name: 앱 만들기
+        run: python packaging/build.py
+      - uses: actions/upload-artifact@v6
+        with:
+          name: StaRbuSt-${{ matrix.os }}
+          path: |
+            packaging/dist/*.dmg
+            packaging/dist/*-setup.exe
+          if-no-files-found: error
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v7
+        with:
+          path: files
+          merge-multiple: true
+      - name: 릴리스 초안에 설치 파일 붙이기
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release create "${{ github.ref_name }}" files/* --repo "${{ github.repository }}" --draft --title "StaRbuSt ${{ github.ref_name }}" --generate-notes

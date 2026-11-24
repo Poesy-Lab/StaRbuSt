@@ -1,0 +1,250 @@
+{
+ "equations": {
+  "tank_mass": {
+   "tex": "\\frac{dm}{dt} = -\\dot m_{\\mathrm{ox}} - \\dot m_{\\mathrm{vent}}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mfrac><mrow><mi>d</mi><mi>m</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mi>−</mi><msub><mover><mi>m</mi><mo accent=\"true\">̇</mo></mover><mrow><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">x</mi></mrow></msub><mo>−</mo><msub><mover><mi>m</mi><mo accent=\"true\">̇</mo></mover><mrow><mi mathvariant=\"normal\">v</mi><mi mathvariant=\"normal\">e</mi><mi mathvariant=\"normal\">n</mi><mi mathvariant=\"normal\">t</mi></mrow></msub></mrow></math>"
+  },
+  "tank_energy": {
+   "tex": "\\frac{dU}{dt} = -\\dot m_{\\mathrm{ox}}\\,h_l - \\dot m_{\\mathrm{vent}}\\,h_v",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mfrac><mrow><mi>d</mi><mi>U</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo>=</mo><mi>−</mi><msub><mover><mi>m</mi><mo accent=\"true\">̇</mo></mover><mrow><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">x</mi></mrow></msub><mspace width=\"0.167em\"></mspace><msub><mi>h</mi><mi>l</mi></msub><mo>−</mo><msub><mover><mi>m</mi><mo accent=\"true\">̇</mo></mover><mrow><mi mathvariant=\"normal\">v</mi><mi mathvariant=\"normal\">e</mi><mi mathvariant=\"normal\">n</mi><mi mathvariant=\"normal\">t</mi></mrow></msub><mspace width=\"0.167em\"></mspace><msub><mi>h</mi><mi>v</mi></msub></mrow></math>"
+  },
+  "tank_volume": {
+   "tex": "V = \\frac{\\pi D^2}{4}\\,H, \\qquad P = P_{\\mathrm{sat}}(T)",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>V</mi><mo>=</mo><mfrac><mrow><mi>π</mi><msup><mi>D</mi><mn>2</mn></msup></mrow><mn>4</mn></mfrac><mspace width=\"0.167em\"></mspace><mi>H</mi><mo>,</mo><mspace width=\"2.0em\"></mspace><mi>P</mi><mo>=</mo><msub><mi>P</mi><mrow><mi mathvariant=\"normal\">s</mi><mi mathvariant=\"normal\">a</mi><mi mathvariant=\"normal\">t</mi></mrow></msub><mo stretchy=\"false\" form=\"prefix\">(</mo><mi>T</mi><mo stretchy=\"false\" form=\"postfix\">)</mo></mrow></math>"
+  },
+  "line_momentum": {
+   "tex": "-\\frac{dP}{dz} = \\varphi\\,\\frac{f}{D}\\,\\frac{G^2 v}{2} + G^2\\,\\frac{dv}{dz}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>−</mi><mfrac><mrow><mi>d</mi><mi>P</mi></mrow><mrow><mi>d</mi><mi>z</mi></mrow></mfrac><mo>=</mo><mi>φ</mi><mspace width=\"0.167em\"></mspace><mfrac><mi>f</mi><mi>D</mi></mfrac><mspace width=\"0.167em\"></mspace><mfrac><mrow><msup><mi>G</mi><mn>2</mn></msup><mi>v</mi></mrow><mn>2</mn></mfrac><mo>+</mo><msup><mi>G</mi><mn>2</mn></msup><mspace width=\"0.167em\"></mspace><mfrac><mrow><mi>d</mi><mi>v</mi></mrow><mrow><mi>d</mi><mi>z</mi></mrow></mfrac></mrow></math>"
+  },
+  "line_loss": {
+   "tex": "\\Delta P = K\\,\\frac{G^2 v}{2} + G^2\\,\\Delta v",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi mathvariant=\"normal\">Δ</mi><mi>P</mi><mo>=</mo><mi>K</mi><mspace width=\"0.167em\"></mspace><mfrac><mrow><msup><mi>G</mi><mn>2</mn></msup><mi>v</mi></mrow><mn>2</mn></mfrac><mo>+</mo><msup><mi>G</mi><mn>2</mn></msup><mspace width=\"0.167em\"></mspace><mi mathvariant=\"normal\">Δ</mi><mi>v</mi></mrow></math>"
+  },
+  "line_valve": {
+   "tex": "K = \\left(\\frac{A}{C_c\\,A_b}\\right)^{2} - 1",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>K</mi><mo>=</mo><msup><mrow><mo stretchy=\"true\" form=\"prefix\">(</mo><mfrac><mi>A</mi><mrow><msub><mi>C</mi><mi>c</mi></msub><mspace width=\"0.167em\"></mspace><msub><mi>A</mi><mi>b</mi></msub></mrow></mfrac><mo stretchy=\"true\" form=\"postfix\">)</mo></mrow><mn>2</mn></msup><mo>−</mo><mn>1</mn></mrow></math>"
+  },
+  "inj_flow": {
+   "tex": "\\dot m_{\\mathrm{ox}} = C_d\\,A\\,G, \\qquad A = N\\,\\frac{\\pi d^2}{4}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mover><mi>m</mi><mo accent=\"true\">̇</mo></mover><mrow><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">x</mi></mrow></msub><mo>=</mo><msub><mi>C</mi><mi>d</mi></msub><mspace width=\"0.167em\"></mspace><mi>A</mi><mspace width=\"0.167em\"></mspace><mi>G</mi><mo>,</mo><mspace width=\"2.0em\"></mspace><mi>A</mi><mo>=</mo><mi>N</mi><mspace width=\"0.167em\"></mspace><mfrac><mrow><mi>π</mi><msup><mi>d</mi><mn>2</mn></msup></mrow><mn>4</mn></mfrac></mrow></math>"
+  },
+  "inj_SPI": {
+   "tex": "G_{\\mathrm{SPI}} = \\sqrt{2\\,\\rho_1\\,(P_1 - P_2)}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>G</mi><mrow><mi mathvariant=\"normal\">S</mi><mi mathvariant=\"normal\">P</mi><mi mathvariant=\"normal\">I</mi></mrow></msub><mo>=</mo><msqrt><mrow><mn>2</mn><mspace width=\"0.167em\"></mspace><msub><mi>ρ</mi><mn>1</mn></msub><mspace width=\"0.167em\"></mspace><mo stretchy=\"false\" form=\"prefix\">(</mo><msub><mi>P</mi><mn>1</mn></msub><mo>−</mo><msub><mi>P</mi><mn>2</mn></msub><mo stretchy=\"false\" form=\"postfix\">)</mo></mrow></msqrt></mrow></math>"
+  },
+  "inj_HEM": {
+   "tex": "G_{\\mathrm{HEM}} = \\frac{\\sqrt{2\\,(h_1 - h_2)}}{v_2}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>G</mi><mrow><mi mathvariant=\"normal\">H</mi><mi mathvariant=\"normal\">E</mi><mi mathvariant=\"normal\">M</mi></mrow></msub><mo>=</mo><mfrac><msqrt><mrow><mn>2</mn><mspace width=\"0.167em\"></mspace><mo stretchy=\"false\" form=\"prefix\">(</mo><msub><mi>h</mi><mn>1</mn></msub><mo>−</mo><msub><mi>h</mi><mn>2</mn></msub><mo stretchy=\"false\" form=\"postfix\">)</mo></mrow></msqrt><msub><mi>v</mi><mn>2</mn></msub></mfrac></mrow></math>"
+  },
+  "inj_Dyer": {
+   "tex": "G_{\\mathrm{Dyer}} = \\frac{\\kappa}{1+\\kappa}\\,G_{\\mathrm{SPI}} + \\frac{1}{1+\\kappa}\\,G_{\\mathrm{HEM},c}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>G</mi><mrow><mi mathvariant=\"normal\">D</mi><mi mathvariant=\"normal\">y</mi><mi mathvariant=\"normal\">e</mi><mi mathvariant=\"normal\">r</mi></mrow></msub><mo>=</mo><mfrac><mi>κ</mi><mrow><mn>1</mn><mo>+</mo><mi>κ</mi></mrow></mfrac><mspace width=\"0.167em\"></mspace><msub><mi>G</mi><mrow><mi mathvariant=\"normal\">S</mi><mi mathvariant=\"normal\">P</mi><mi mathvariant=\"normal\">I</mi></mrow></msub><mo>+</mo><mfrac><mn>1</mn><mrow><mn>1</mn><mo>+</mo><mi>κ</mi></mrow></mfrac><mspace width=\"0.167em\"></mspace><msub><mi>G</mi><mrow><mrow><mi mathvariant=\"normal\">H</mi><mi mathvariant=\"normal\">E</mi><mi mathvariant=\"normal\">M</mi></mrow><mo>,</mo><mi>c</mi></mrow></msub></mrow></math>"
+  },
+  "inj_FML": {
+   "tex": "G_{\\mathrm{FML}} = (1-\\alpha_2)\\,G_{\\mathrm{SPC}} + \\alpha_2\\,G_{\\mathrm{HEM},c}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>G</mi><mrow><mi mathvariant=\"normal\">F</mi><mi mathvariant=\"normal\">M</mi><mi mathvariant=\"normal\">L</mi></mrow></msub><mo>=</mo><mo stretchy=\"false\" form=\"prefix\">(</mo><mn>1</mn><mo>−</mo><msub><mi>α</mi><mn>2</mn></msub><mo stretchy=\"false\" form=\"postfix\">)</mo><mspace width=\"0.167em\"></mspace><msub><mi>G</mi><mrow><mi mathvariant=\"normal\">S</mi><mi mathvariant=\"normal\">P</mi><mi mathvariant=\"normal\">C</mi></mrow></msub><mo>+</mo><msub><mi>α</mi><mn>2</mn></msub><mspace width=\"0.167em\"></mspace><msub><mi>G</mi><mrow><mrow><mi mathvariant=\"normal\">H</mi><mi mathvariant=\"normal\">E</mi><mi mathvariant=\"normal\">M</mi></mrow><mo>,</mo><mi>c</mi></mrow></msub></mrow></math>"
+  },
+  "grain_regression": {
+   "tex": "\\dot r = a\\,G_{\\mathrm{ox}}^{\\,n}, \\qquad G_{\\mathrm{ox}} = \\frac{\\dot m_{\\mathrm{ox}}}{N\\,\\pi R^2}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mover><mi>r</mi><mo accent=\"true\">̇</mo></mover><mo>=</mo><mi>a</mi><mspace width=\"0.167em\"></mspace><msubsup><mi>G</mi><mrow><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">x</mi></mrow><mrow><mspace width=\"0.167em\"></mspace><mi>n</mi></mrow></msubsup><mo>,</mo><mspace width=\"2.0em\"></mspace><msub><mi>G</mi><mrow><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">x</mi></mrow></msub><mo>=</mo><mfrac><msub><mover><mi>m</mi><mo accent=\"true\">̇</mo></mover><mrow><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">x</mi></mrow></msub><mrow><mi>N</mi><mspace width=\"0.167em\"></mspace><mi>π</mi><msup><mi>R</mi><mn>2</mn></msup></mrow></mfrac></mrow></math>"
+  },
+  "chamber_pressure": {
+   "tex": "P_c = \\frac{\\eta_{c^*}\\,c^{*}\\left(\\dot m_{\\mathrm{ox}} + \\dot m_f\\right)}{A_t}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msub><mi>P</mi><mi>c</mi></msub><mo>=</mo><mfrac><mrow><msub><mi>η</mi><msup><mi>c</mi><mo>*</mo></msup></msub><mspace width=\"0.167em\"></mspace><msup><mi>c</mi><mo>*</mo></msup><mrow><mo stretchy=\"true\" form=\"prefix\">(</mo><msub><mover><mi>m</mi><mo accent=\"true\">̇</mo></mover><mrow><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">x</mi></mrow></msub><mo>+</mo><msub><mover><mi>m</mi><mo accent=\"true\">̇</mo></mover><mi>f</mi></msub><mo stretchy=\"true\" form=\"postfix\">)</mo></mrow></mrow><msub><mi>A</mi><mi>t</mi></msub></mfrac></mrow></math>"
+  },
+  "nozzle_thrust": {
+   "tex": "F = \\lambda\\,\\eta_n\\,C_F\\,P_c\\,A_t",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>F</mi><mo>=</mo><mi>λ</mi><mspace width=\"0.167em\"></mspace><msub><mi>η</mi><mi>n</mi></msub><mspace width=\"0.167em\"></mspace><msub><mi>C</mi><mi>F</mi></msub><mspace width=\"0.167em\"></mspace><msub><mi>P</mi><mi>c</mi></msub><mspace width=\"0.167em\"></mspace><msub><mi>A</mi><mi>t</mi></msub></mrow></math>"
+  },
+  "nozzle_geometry": {
+   "tex": "\\varepsilon = \\left(\\frac{D_e}{D_t}\\right)^{2}, \\qquad \\lambda = \\frac{1+\\cos\\alpha}{2}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>ε</mi><mo>=</mo><msup><mrow><mo stretchy=\"true\" form=\"prefix\">(</mo><mfrac><msub><mi>D</mi><mi>e</mi></msub><msub><mi>D</mi><mi>t</mi></msub></mfrac><mo stretchy=\"true\" form=\"postfix\">)</mo></mrow><mn>2</mn></msup><mo>,</mo><mspace width=\"2.0em\"></mspace><mi>λ</mi><mo>=</mo><mfrac><mrow><mn>1</mn><mo>+</mo><mrow><mi mathvariant=\"normal\">cos</mi><mo>&#8289;</mo></mrow><mi>α</mi></mrow><mn>2</mn></mfrac></mrow></math>"
+  },
+  "euler": {
+   "tex": "y^{k+1} = y^{k} + \\Delta t\\left(\\frac{dy}{dt}\\right)^{k}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><msup><mi>y</mi><mrow><mi>k</mi><mo>+</mo><mn>1</mn></mrow></msup><mo>=</mo><msup><mi>y</mi><mi>k</mi></msup><mo>+</mo><mi mathvariant=\"normal\">Δ</mi><mi>t</mi><msup><mrow><mo stretchy=\"true\" form=\"prefix\">(</mo><mfrac><mrow><mi>d</mi><mi>y</mi></mrow><mrow><mi>d</mi><mi>t</mi></mrow></mfrac><mo stretchy=\"true\" form=\"postfix\">)</mo></mrow><mi>k</mi></msup></mrow></math>"
+  },
+  "K_from_Kv": {
+   "tex": "K = 1.60\\times10^{-3}\\,\\frac{D^{4}}{K_v^{\\,2}}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>K</mi><mo>=</mo><mn>1.60</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>3</mn></mrow></msup><mspace width=\"0.167em\"></mspace><mfrac><msup><mi>D</mi><mn>4</mn></msup><msubsup><mi>K</mi><mi>v</mi><mrow><mspace width=\"0.167em\"></mspace><mn>2</mn></mrow></msubsup></mfrac></mrow></math>"
+  },
+  "K_from_Cv": {
+   "tex": "K = 2.14\\times10^{-3}\\,\\frac{D^{4}}{C_v^{\\,2}}",
+   "mathml": "<math display=\"block\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi>K</mi><mo>=</mo><mn>2.14</mn><mo>×</mo><msup><mn>10</mn><mrow><mi>−</mi><mn>3</mn></mrow></msup><mspace width=\"0.167em\"></mspace><mfrac><msup><mi>D</mi><mn>4</mn></msup><msubsup><mi>C</mi><mi>v</mi><mrow><mspace width=\"0.167em\"></mspace><mn>2</mn></mrow></msubsup></mfrac></mrow></math>"
+  }
+ },
+ "symbols": {
+  "D": {
+   "tex": "D",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>D</mi></math>"
+  },
+  "H": {
+   "tex": "H",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>H</mi></math>"
+  },
+  "m0": {
+   "tex": "m_0",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>m</mi><mn>0</mn></msub></math>"
+  },
+  "T0": {
+   "tex": "T_0",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>T</mi><mn>0</mn></msub></math>"
+  },
+  "d_vent": {
+   "tex": "d_{\\mathrm{vent}}",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>d</mi><mrow><mi mathvariant=\"normal\">v</mi><mi mathvariant=\"normal\">e</mi><mi mathvariant=\"normal\">n</mi><mi mathvariant=\"normal\">t</mi></mrow></msub></math>"
+  },
+  "Cd_vent": {
+   "tex": "C_{d,\\mathrm{vent}}",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>C</mi><mrow><mi>d</mi><mo>,</mo><mrow><mi mathvariant=\"normal\">v</mi><mi mathvariant=\"normal\">e</mi><mi mathvariant=\"normal\">n</mi><mi mathvariant=\"normal\">t</mi></mrow></mrow></msub></math>"
+  },
+  "L": {
+   "tex": "L",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>L</mi></math>"
+  },
+  "phi": {
+   "tex": "\\varphi",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>φ</mi></math>"
+  },
+  "D_b": {
+   "tex": "D_b",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>D</mi><mi>b</mi></msub></math>"
+  },
+  "Cc": {
+   "tex": "C_c",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>C</mi><mi>c</mi></msub></math>"
+  },
+  "K": {
+   "tex": "K",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>K</mi></math>"
+  },
+  "d": {
+   "tex": "d",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>d</mi></math>"
+  },
+  "N": {
+   "tex": "N",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>N</mi></math>"
+  },
+  "Cd": {
+   "tex": "C_d",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>C</mi><mi>d</mi></msub></math>"
+  },
+  "R0": {
+   "tex": "R_0",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>R</mi><mn>0</mn></msub></math>"
+  },
+  "a": {
+   "tex": "a",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>a</mi></math>"
+  },
+  "n": {
+   "tex": "n",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>n</mi></math>"
+  },
+  "eta_cstar": {
+   "tex": "\\eta_{c^*}",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>η</mi><msup><mi>c</mi><mo>*</mo></msup></msub></math>"
+  },
+  "Dt": {
+   "tex": "D_t",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>D</mi><mi>t</mi></msub></math>"
+  },
+  "De": {
+   "tex": "D_e",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>D</mi><mi>e</mi></msub></math>"
+  },
+  "alpha": {
+   "tex": "\\alpha",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>α</mi></math>"
+  },
+  "eta_n": {
+   "tex": "\\eta_n",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>η</mi><mi>n</mi></msub></math>"
+  },
+  "Pa": {
+   "tex": "P_a",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>P</mi><mi>a</mi></msub></math>"
+  },
+  "dt": {
+   "tex": "\\Delta t",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mrow><mi mathvariant=\"normal\">Δ</mi><mi>t</mi></mrow></math>"
+  },
+  "t_end": {
+   "tex": "t_{\\mathrm{end}}",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>t</mi><mrow><mi mathvariant=\"normal\">e</mi><mi mathvariant=\"normal\">n</mi><mi mathvariant=\"normal\">d</mi></mrow></msub></math>"
+  },
+  "mdot_ox": {
+   "tex": "\\dot m_{\\mathrm{ox}}",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mover><mi>m</mi><mo accent=\"true\">̇</mo></mover><mrow><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">x</mi></mrow></msub></math>"
+  },
+  "P1": {
+   "tex": "P_1",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>P</mi><mn>1</mn></msub></math>"
+  },
+  "Pc": {
+   "tex": "P_c",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>P</mi><mi>c</mi></msub></math>"
+  },
+  "F": {
+   "tex": "F",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>F</mi></math>"
+  },
+  "It": {
+   "tex": "I_t",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>I</mi><mi>t</mi></msub></math>"
+  },
+  "m_ox": {
+   "tex": "m_{\\mathrm{ox}}",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>m</mi><mrow><mi mathvariant=\"normal\">o</mi><mi mathvariant=\"normal\">x</mi></mrow></msub></math>"
+  },
+  "G": {
+   "tex": "G",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>G</mi></math>"
+  },
+  "P2": {
+   "tex": "P_2",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>P</mi><mn>2</mn></msub></math>"
+  },
+  "x": {
+   "tex": "x",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>x</mi></math>"
+  },
+  "v": {
+   "tex": "v",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>v</mi></math>"
+  },
+  "f": {
+   "tex": "f",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>f</mi></math>"
+  },
+  "A_b": {
+   "tex": "A_b",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>A</mi><mi>b</mi></msub></math>"
+  },
+  "R": {
+   "tex": "R",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><mi>R</mi></math>"
+  },
+  "cstar": {
+   "tex": "c^{*}",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msup><mi>c</mi><mo>*</mo></msup></math>"
+  },
+  "CF": {
+   "tex": "C_F",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>C</mi><mi>F</mi></msub></math>"
+  },
+  "At": {
+   "tex": "A_t",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>A</mi><mi>t</mi></msub></math>"
+  },
+  "Kv": {
+   "tex": "K_v",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>K</mi><mi>v</mi></msub></math>"
+  },
+  "Cv": {
+   "tex": "C_v",
+   "mathml": "<math display=\"inline\" xmlns=\"http://www.w3.org/1998/Math/MathML\"><msub><mi>C</mi><mi>v</mi></msub></math>"
+  }
+ }
+}

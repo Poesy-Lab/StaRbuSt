@@ -1,0 +1,140 @@
+{
+  "id": "hot_fire_1",
+  "kind": "hot_fire",
+  "title": "2026 NOVA 라인 연소시험 1 (26.07.03 #1)",
+  "source": {
+    "file": "26.07.03#1.lvm",
+    "sha256": "dfa705bf17a76eb8f5d38b623acc4c0582ba37a00df7b5208123e30fca599718",
+    "sample_rate_hz": 2000,
+    "n_samples": 232100
+  },
+  "processing": {
+    "steps": [
+      "교정: 공학값 = slope × 원시 전압 + offset (bar_g, kgf, kg)",
+      "영점 보정: zero_window_s 가 있는 압력·추력 채널에서 창(원시 파일 시각) 안의 교정값 평균을 뺀다. 질량 채널은 보정하지 않는다",
+      "단위 변환: 게이지압 + 1.013 bar → 절대압 bar, kgf × 9.80665 → N, 질량은 kg 그대로",
+      "시간 원점: 정렬 채널에 중심 이동평균(MATLAB movmean, 끝단 창 축소)을 적용하고 임계값을 처음 넘는 표본을 t = 0 으로 둔다 (t0_definition 참조)",
+      "출력: 평활하지 않은 신호를 10 표본씩 겹치지 않게 블록 평균해 200 Hz 로 줄이고, 시각은 블록 평균 시각 − t0 으로 둔다",
+      "보존 구간: t = −2.0 s 부터, 탱크압이 대기압 ± 0.3 bar 안으로 처음 돌아온 시각 + 2.0 s 까지 (최대 +25.0 s, 기록 끝에서 끊긴다)"
+    ],
+    "gauge_to_abs_bar": 1.013,
+    "output_rate_hz": 200,
+    "t0_definition": "추력(F, 영점 보정)의 20 표본(10 ms) 이동평균이 100 N 을 처음 넘는 시각 = 밸브 개방. 연소실 압력 채널은 응답이 늦어 시각 0 을 정하는 데 쓰지 않는다",
+    "t0_raw_s": 104.6455
+  },
+  "channels": [
+    {
+      "name": "P_tank_bar",
+      "unit": "bar_abs",
+      "description": "산화제(N2O) 탱크 압력",
+      "raw_column": 4,
+      "calibration": {
+        "slope": 6174.60242,
+        "offset": -24.59134,
+        "raw_unit": "V",
+        "cal_unit": "bar_g"
+      },
+      "zero_offset_applied": {
+        "value": -0.796973,
+        "unit": "bar",
+        "window_raw_s": [
+          0.0,
+          8.0
+        ]
+      },
+      "note": ""
+    },
+    {
+      "name": "P_c_bar",
+      "unit": "bar_abs",
+      "description": "프리챔버(예연소실) 압력",
+      "raw_column": 5,
+      "calibration": {
+        "slope": 3118.71908,
+        "offset": -12.4072,
+        "raw_unit": "V",
+        "cal_unit": "bar_g"
+      },
+      "zero_offset_applied": {
+        "value": 0.495229,
+        "unit": "bar",
+        "window_raw_s": [
+          0.0,
+          100.0
+        ]
+      },
+      "note": "추력보다 0.375 s 늦게 응답한다(시동부터 꼬리까지 -0.35 ~ 4.75 s 구간에서 추력과의 상관계수가 가장 큰 이동량, 상관계수 0.988). CSV 의 값은 계측한 그대로이고, 읽을 때 이만큼 당겨 쓴다",
+      "delay_s": 0.375
+    },
+    {
+      "name": "P_c_post_bar",
+      "unit": "bar_abs",
+      "description": "포스트챔버(후연소실) 압력",
+      "raw_column": 6,
+      "calibration": {
+        "slope": 3090.80188,
+        "offset": -12.37548,
+        "raw_unit": "V",
+        "cal_unit": "bar_g"
+      },
+      "zero_offset_applied": {
+        "value": 0.049017,
+        "unit": "bar",
+        "window_raw_s": [
+          0.0,
+          100.0
+        ]
+      },
+      "note": "추력보다 0.300 s 늦게 응답한다(시동부터 꼬리까지 -0.35 ~ 4.75 s 구간에서 추력과의 상관계수가 가장 큰 이동량, 상관계수 0.988). CSV 의 값은 계측한 그대로이고, 읽을 때 이만큼 당겨 쓴다",
+      "delay_s": 0.3
+    },
+    {
+      "name": "F_N",
+      "unit": "N",
+      "description": "추력 (로드셀)",
+      "raw_column": 3,
+      "calibration": {
+        "slope": 6446.94865,
+        "offset": -25.78494,
+        "raw_unit": "V",
+        "cal_unit": "kgf"
+      },
+      "zero_offset_applied": {
+        "value": -3.123336,
+        "unit": "N",
+        "window_raw_s": [
+          99.5,
+          104.3
+        ]
+      },
+      "note": ""
+    },
+    {
+      "name": "m_kg",
+      "unit": "kg",
+      "description": "탱크 질량 (로드셀)",
+      "raw_column": 2,
+      "calibration": {
+        "slope": 6250.0,
+        "offset": -25.0,
+        "raw_unit": "V",
+        "cal_unit": "kg"
+      },
+      "zero_offset_applied": null,
+      "note": "교정 계수가 확정되지 않았고(2025 년 계수를 그대로 적용) 추력이 걸릴 때 값이 함께 움직인다. 참고용이며 계산과 비교하거나 충전량을 구하는 데 쓰지 않는다",
+      "reference_only": true
+    }
+  ],
+  "initial_conditions": {
+    "P_tank_open_bar": 45.779,
+    "T_sat_C": 15.7,
+    "note": "탱크 압력은 밸브를 열기 직전 0.2 s 의 평균, 온도는 그 압력의 포화 온도. 충전량은 재지 못했다. 분사시험 두 건의 충전량(1.0 ~ 1.1 kg)에 따라 1.0 kg 으로 두고 계산한다. 질량 채널은 교정 계수가 확정되지 않았고 추력이 걸릴 때 값이 함께 움직여 충전량을 구하는 데 쓰지 않는다"
+  },
+  "notes": [
+    "원시 파일의 2열이 질량, 3열이 추력이다. 처음 전해 받은 열 순서와 반대여서 신호의 모양으로 확인했다",
+    "추력과 압력의 교정 계수는 2026년 교정 기록의 값이고, 질량 채널에는 2025년의 계수를 그대로 썼다",
+    "영점: 프리챔버 압력은 점화 전 [0, 100] s 의 평균이 +0.495 bar g, 포스트챔버 압력은 같은 구간에서 +0.049 bar g 다. 탱크 압력은 충전 전 [0, 8] s 의 평균이 −0.797 bar g 이고 탱크가 빈 뒤의 값(−0.71 ~ −0.79 bar g)과 맞는다. 추력은 점화 직전 [99.5, 104.3] s 의 평균이 −3.12 N 이다. 연소가 끝난 뒤에는 +28.8 N 으로 돌아와 영점이 그만큼 움직였다",
+    "시각 0: 추력이 오르기 시작한 시각(밸브 개방). 원시 파일의 정렬 기준이던 프리챔버 압력 3 bar g 통과 시각은 이보다 약 0.26 s 뒤다",
+    "연소실 압력 채널의 응답: 개방 뒤 0.14 s 에 추력은 1001 N 인데 프리챔버 압력은 1.3 bar, 포스트챔버 압력은 2.5 bar 를 가리킨다(55 ms 평균). 추력은 연소실 압력 없이 생기지 않으므로 압력 채널의 응답이 늦은 것으로 보고 channels 의 delay_s 만큼 당겨 비교한다"
+  ]
+}

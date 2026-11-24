@@ -1,0 +1,86 @@
+{
+  "id": "cold_flow_1",
+  "kind": "cold_flow",
+  "title": "2026 NOVA 라인 분사시험 1 (계수 보정용)",
+  "source": {
+    "file": "2026_test.lvm",
+    "sha256": "9bc7883f493243fe2d6c5f6daf853a635f58ff13aeb834823ceaa55369571cc8",
+    "sample_rate_hz": 5000,
+    "n_samples": 117100
+  },
+  "processing": {
+    "steps": [
+      "교정: 공학값 = slope × 원시 전압 + offset (bar_g, kgf, kg)",
+      "영점 보정: zero_window_s 가 있는 압력·추력 채널에서 창(원시 파일 시각) 안의 교정값 평균을 뺀다. 질량 채널은 보정하지 않는다",
+      "단위 변환: 게이지압 + 1.013 bar → 절대압 bar, kgf × 9.80665 → N, 질량은 kg 그대로",
+      "시간 원점: 정렬 채널에 중심 이동평균(MATLAB movmean, 끝단 창 축소)을 적용하고 임계값을 처음 넘는 표본을 t = 0 으로 둔다 (t0_definition 참조)",
+      "출력: 평활하지 않은 신호를 25 표본씩 겹치지 않게 블록 평균해 200 Hz 로 줄이고, 시각은 블록 평균 시각 − t0 으로 둔다",
+      "보존 구간: t = −2.0 s 부터, 탱크압이 대기압 ± 0.3 bar 안으로 처음 돌아온 시각 + 2.0 s 까지 (최대 +25.0 s, 기록 끝에서 끊긴다)"
+    ],
+    "gauge_to_abs_bar": 1.013,
+    "output_rate_hz": 200,
+    "t0_definition": "인젝터 바로 앞 배관 압력(P_inj, 영점 보정 게이지압)의 2500 표본 이동평균이 3.0 bar g 를 처음 넘는 시각 = 밸브 개방",
+    "t0_raw_s": 1.544
+  },
+  "channels": [
+    {
+      "name": "P_tank_bar",
+      "unit": "bar_abs",
+      "description": "산화제(N2O) 탱크 압력",
+      "raw_column": 2,
+      "calibration": {
+        "slope": 6174.60242,
+        "offset": -24.59134,
+        "raw_unit": "V",
+        "cal_unit": "bar_g"
+      },
+      "zero_offset_applied": null,
+      "note": "영점 창이 정의되지 않아 영점 보정하지 않음"
+    },
+    {
+      "name": "P_inj_bar",
+      "unit": "bar_abs",
+      "description": "인젝터 바로 앞 배관 압력",
+      "raw_column": 3,
+      "calibration": {
+        "slope": 3118.71908,
+        "offset": -12.4072,
+        "raw_unit": "V",
+        "cal_unit": "bar_g"
+      },
+      "zero_offset_applied": {
+        "value": -0.011697,
+        "unit": "bar",
+        "window_raw_s": [
+          0.0,
+          1.2
+        ]
+      },
+      "note": ""
+    },
+    {
+      "name": "m_kg",
+      "unit": "kg",
+      "description": "탱크 질량 (로드셀)",
+      "raw_column": 4,
+      "calibration": {
+        "slope": 3108.70516,
+        "offset": -12.34394,
+        "raw_unit": "V",
+        "cal_unit": "kg"
+      },
+      "zero_offset_applied": null,
+      "note": ""
+    }
+  ],
+  "initial_conditions": {
+    "P_tank_open_bar": 35.811,
+    "T_sat_C": 5.45,
+    "mass_drop_kg": 1.1088,
+    "note": "탱크 압력은 밸브를 열기 직전 0.2 s 의 평균, 온도는 그 압력의 포화 온도. 질량 감소는 열기 전 0.5 s 평균에서 기록 마지막 1 s 평균을 뺀 값이고, 충전량은 여기에 끝에 탱크에 남은 증기의 질량을 더한 값이다"
+  },
+  "notes": [
+    "원시 기록에 딸린 안내문의 열 설명: 1열 시간, 2열 탱크압(100 bar), 3열 인젝터압(50 bar), 4열 로드셀",
+    "영점: 인젝터 입구 압력은 밸브를 열기 전 [0, 1.2] s 의 평균이 −0.012 bar g 다. 탱크 압력은 기록이 충전된 상태에서 시작해 영점 구간이 없고 보정하지 않았다(기록 끝의 값 −0.010 bar g)"
+  ]
+}

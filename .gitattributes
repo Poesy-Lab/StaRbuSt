@@ -1,0 +1,7 @@
+# 글 파일의 줄 끝은 LF 로 통일한다. Windows 배치 파일만 CRLF.
+* text=auto eol=lf
+*.bat text eol=crlf
+*.png binary
+*.ico binary
+*.icns binary
+*.otf binary

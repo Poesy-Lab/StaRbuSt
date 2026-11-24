@@ -1,0 +1,24 @@
+# Python
+__pycache__/
+*.pyc
+*.egg-info/
+.pytest_cache/
+.venv/
+venv/
+
+# 계산 결과와 화면 캡처(tools/nova_2026.py 등으로 다시 만든다)
+results/
+
+# 설치 파일을 만들 때 생기는 것(packaging/build.py 로 다시 만든다)
+packaging/build/
+packaging/dist/
+
+# 운영체제와 편집기
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# 개인 설정과 비밀 값
+.env
+.env.*

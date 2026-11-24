@@ -1,0 +1,64 @@
+{
+  "name": "NOVA 분사시험 1 (2026)",
+  "mode": "cold_flow",
+  "ambient": {
+    "P_bar": 1.013
+  },
+  "tank": {
+    "d_mm": 90,
+    "h_mm": 260,
+    "m_kg": 1.114,
+    "T_C": 5.45
+  },
+  "vent": {
+    "d_mm": 1.5875,
+    "Cd": 0.1
+  },
+  "feedline": [
+    {
+      "type": "loss",
+      "name": "탱크 출구",
+      "K": 0.5
+    },
+    {
+      "type": "hose",
+      "name": "플렉시블 호스",
+      "d_mm": 6.35,
+      "L_m": 1.0,
+      "phi": 4.63
+    },
+    {
+      "type": "loss",
+      "name": "호스 벤드",
+      "K": 0.4
+    },
+    {
+      "type": "pipe",
+      "name": "관 1",
+      "d_mm": 7.747,
+      "L_m": 0.05
+    },
+    {
+      "type": "valve",
+      "name": "볼밸브",
+      "bore_mm": 6.4,
+      "Cc": 0.62
+    },
+    {
+      "type": "pipe",
+      "name": "관 2",
+      "d_mm": 7.747,
+      "L_m": 0.05
+    }
+  ],
+  "injector": {
+    "d_mm": 1.4,
+    "n": 28,
+    "Cd": 0.564,
+    "model": "HEM"
+  },
+  "time": {
+    "dt_s": 0.01,
+    "t_end_s": 12
+  }
+}

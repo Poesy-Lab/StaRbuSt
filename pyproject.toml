@@ -1,0 +1,20 @@
+[project]
+name = "starbust"
+dynamic = ["version"]
+description = "Self-pressurizing N2O hybrid rocket simulator"
+requires-python = ">=3.11"
+dependencies = ["numpy"]
+
+[project.optional-dependencies]
+fast = ["numba"]
+app = ["nicegui>=4", "plotly"]
+dev = ["pytest", "CoolProp", "rocketcea"]
+
+[tool.setuptools.packages.find]
+include = ["starbust*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "starbust.__version__"}
+
+[tool.setuptools.package-data]
+starbust = ["data/*"]

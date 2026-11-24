@@ -5,7 +5,7 @@
 **S**imulation **t**ool for **a**dvanced **R**ocket **bu**rning with nitrou**S** oxide propellan**t**
 
 자발가압 아산화질소(N₂O) 하이브리드 로켓의 탱크 압력, 산화제 유량, 연소실 압력, 추력을 계산하는 프로그램이다.
-탱크에서 액체가 빠지며 압력이 내려가는 과정, 공급라인에서 압력이 떨어지며 일부가 증발하는 2상 유동, 인젝터, 연료 그레인의 연소, 노즐을 이어서 시간에 따라 계산한다.
+탱크에서 액체가 빠지며 압력이 내려가는 과정, 공급라인에서 압력이 떨어지며 일부가 증발하는 2상 유동, 인젝터 유동, 연료 그레인의 연소, 노즐 유동을 이어서 시간에 따라 계산한다.
 
 | 시작 화면 | 결과 화면(2026년 NOVA 연소시험 예제) |
 |---|---|
@@ -27,26 +27,26 @@ pip install numba
 
 ## 앱으로 설치
 
-Python 없이 쓰려면 설치 파일로 설치한다. 설치 파일은 저장소의 Releases에 있다. 설치한 뒤에는 아이콘으로 연다.
+Python 없이 쓰려면 설치 파일로 설치한다. 설치 파일은 저장소의 Releases에 있다. 설치한 뒤에는 아이콘을 눌러 실행한다.
 
 | 운영체제 | 설치 |
 |---|---|
 | macOS | `StaRbuSt-<버전>-macos-<arm64 또는 x86_64>.dmg`를 열고 StaRbuSt를 응용 프로그램 폴더로 끌어다 놓는다. Apple Silicon Mac은 arm64, Intel Mac은 x86_64 파일을 쓴다 |
 | Windows | `StaRbuSt-<버전>-windows-setup.exe`를 실행한다. 시작 메뉴와 바탕 화면에 아이콘이 생긴다 |
 
-앱을 열면 이 컴퓨터 안에서만 보이는 작은 서버가 뜨고 화면이 창 하나에 열린다. Edge나 Chrome이 있으면 주소창이 없는 앱 창으로, 없으면 기본 브라우저의 탭으로 열린다. 창을 닫으면 앱도 끝난다. 인터넷 연결은 필요 없다.
+앱을 실행하면 로컬 서버가 켜지고 화면이 새 창으로 열린다. Edge나 Chrome이 있으면 주소창이 없는 앱 창으로, 없으면 기본 브라우저의 탭으로 열린다. 창을 닫으면 앱도 종료된다. 인터넷 연결은 필요 없다.
 
-- 앱에 개발자 서명이 없어서 다른 컴퓨터에서 처음 열 때 경고가 나온다. macOS에서는 앱을 오른쪽 단추로 눌러 "열기"를 고르거나 시스템 설정의 개인정보 보호 및 보안에서 "그래도 열기"를 누른다. Windows에서는 "추가 정보"를 누른 뒤 "실행"을 누른다.
+- 앱에 개발자 서명이 없어서 처음 실행할 때 경고가 나온다. macOS에서는 앱을 마우스 오른쪽 버튼으로 눌러 "열기"를 고르거나 시스템 설정의 개인정보 보호 및 보안에서 "그래도 열기"를 누른다. Windows에서는 "추가 정보"를 누른 뒤 "실행"을 누른다.
 - 로그와 계산 준비 파일은 사용자 폴더에 둔다(macOS `~/Library/Application Support/StaRbuSt`, Windows `%LOCALAPPDATA%\StaRbuSt`). 앱이 열리지 않으면 그 폴더의 `starbust.log`를 본다.
 
-설치 파일은 `packaging/build.py`가 만든다. 만드는 컴퓨터의 운영체제용 파일이 나온다.
+설치 파일은 `packaging/build.py`로 만든다. 실행하는 컴퓨터의 운영체제용 파일이 생성된다.
 
 ```bash
 pip install pyinstaller numpy numba plotly nicegui
 python packaging/build.py
 ```
 
-Windows에서는 `packaging/build_windows.bat`을 두 번 눌러도 된다(Inno Setup 6이 있으면 설치 파일까지 만든다). 저장소의 `.github/workflows/build-app.yml`은 GitHub에서 macOS(Apple Silicon, Intel)와 Windows용을 한 번에 만든다. `v1.0.0`처럼 버전 번호와 같은 태그를 올리면 Releases의 초안에 설치 파일이 붙는다.
+Windows에서는 `packaging/build_windows.bat`을 더블클릭해 실행해도 된다(Inno Setup 6이 있으면 설치 파일까지 만든다). 저장소의 `.github/workflows/build-app.yml`은 GitHub에서 macOS(Apple Silicon, Intel)용과 Windows용 설치 파일을 한 번에 만든다. `v1.0.0`처럼 버전 번호와 같은 태그를 올리면 Releases 초안에 설치 파일이 첨부된다.
 
 ## 실행
 
@@ -59,8 +59,8 @@ python3 app/main.py
 브라우저에 화면이 열린다. 시작 화면에서 예제(2026년 NOVA 분사시험, 연소시험)를 불러 계산해 볼 수 있다.
 입력 화면에는 칸마다 모델 문서와 같은 기호가 붙어 있고 요소마다 핵심 수식이 함께 나온다.
 화면의 색은 계산 모드를 따른다. 시작 화면은 연두색, 분사시험은 하늘색, 연소시험은 주황색이고 색은 `app/main.py` 위쪽의 `THEMES`에 있다.
-공급라인 화면 아래에는 대표적인 손실계수 표가 있다. 밸브는 카탈로그의 유량계수(Cv 또는 Kv)로 넣고, 유량계수가 없으면 보어 지름으로 어림한다.
-시험 비교 화면에서는 시험 자료의 양식(CSV)을 받을 수 있고, 올린 시험 자료를 목록에 저장하거나 뺄 수 있다(사용자 폴더의 `tests`). 수식 글꼴은 Latin Modern Math(GUST Font License, `app/assets/fonts/`)다.
+공급라인 화면 아래에는 대표적인 손실계수 표가 있다. 밸브는 카탈로그의 유량계수(Cv 또는 Kv)를 입력하고, 유량계수가 없으면 보어 지름으로 어림한다.
+시험 비교 화면에서는 시험 자료의 양식(CSV)을 받을 수 있고, 올린 시험 자료를 목록에 저장하거나 목록에서 뺄 수 있다(사용자 폴더의 `tests`). 수식 글꼴은 Latin Modern Math(GUST Font License, `app/assets/fonts/`)다.
 
 코드에서 쓰기:
 
@@ -75,13 +75,13 @@ print(starbust.summary(result))
 
 | 폴더 | 내용 |
 |---|---|
-| `starbust/` | 계산 코드. 요소마다 파일 하나: `tank`, `feedline`, `injector`, `chamber`, `nozzle`, 그리고 이들을 잇는 `system` |
+| `starbust/` | 계산 코드. 요소별 파일(`tank`, `feedline`, `injector`, `chamber`, `nozzle`)과 이들을 잇는 `system` |
 | `starbust/data/` | N₂O 포화 물성표(CoolProp으로 계산), N₂O/HDPE 화학 평형 표(NASA CEA로 계산) |
 | `app/` | 화면(NiceGUI). `main.py`가 화면, `icons.py`가 아이콘과 계통도, `equations.json`이 화면에 보이는 수식과 기호, `assets/`가 로고와 사진 |
 | `examples/` | 입력 예제(JSON) |
 | `testdata/` | 시험 자료(CSV와 설명 JSON) |
-| `tools/` | 표를 만드는 스크립트, 시험 원자료 변환, 시험 비교 스크립트, 화면의 수식을 만드는 스크립트(`make_equations.py`), 아이콘과 로고를 만드는 스크립트(`make_logo.py`) |
-| `tests/` | 자동 시험(`python3 -m pytest tests -q`) |
+| `tools/` | 물성·평형 표를 만드는 스크립트, 시험 원자료 변환 스크립트, 시험 비교 스크립트, 화면의 수식을 만드는 스크립트(`make_equations.py`), 아이콘과 로고를 만드는 스크립트(`make_logo.py`) |
+| `tests/` | 단위 테스트(`python3 -m pytest tests -q`) |
 | `packaging/` | 설치 파일을 만드는 스크립트와 아이콘 |
 | `docs/` | 코드 해설(`code_guide.md`)과 그림 |
 
@@ -95,11 +95,11 @@ print(starbust.summary(result))
 | 연소실 · 그레인 | 0차원, 후퇴율 식과 화학 평형(NASA CEA) |
 | 노즐 | 평형 유동의 추력계수, 외기압과 유동 박리 반영 |
 
-시간 적분은 Explicit Euler이고, 시간 단계마다 공급라인을 지난 유량과 인젝터 유량의 일치(bisection), 연소실 압력(fixed-point iteration)을 푼다.
+시간 적분에는 Explicit Euler 기법을 쓰고, 시간 단계마다 공급라인을 지난 유량과 인젝터 유량이 같아지는 조건(bisection)과 연소실 압력(fixed-point iteration)을 푼다.
 
 ## 입력 파일
 
-단위를 이름 끝에 붙여 적는다(`d_mm`, `L_m`, `T_C`, `P_bar`, `m_kg`). 항목의 뜻은 `starbust/config.py`의 설명과 `examples/`의 파일을 본다. 공급라인은 요소의 목록이다.
+항목 이름 끝에 단위를 붙여 적는다(`d_mm`, `L_m`, `T_C`, `P_bar`, `m_kg`). 각 항목의 뜻은 `starbust/config.py`의 설명과 `examples/`의 파일을 참고한다. 공급라인은 요소를 순서대로 나열해 적는다.
 
 ```json
 "feedline": [
@@ -110,7 +110,7 @@ print(starbust.summary(result))
 ]
 ```
 
-밸브는 카탈로그의 유량계수로도 적는다: `{"type": "valve", "Cv": 1.3}` 또는 `{"type": "valve", "Kv": 1.1}`. 위의 보어 지름과 수축계수는 유량계수를 모를 때 밸브를 구멍으로 보고 어림하는 방식이고, 예제의 값(6.4 mm, 0.62)은 Cv 1.30에 해당한다.
+밸브는 `{"type": "valve", "Cv": 1.3}` 또는 `{"type": "valve", "Kv": 1.1}`처럼 카탈로그의 유량계수로도 적는다. 보어 지름과 수축계수를 쓰는 것은 유량계수를 모를 때 밸브를 오리피스로 보고 어림하는 방식이고, 예제의 값(6.4 mm, 0.62)은 Cv 1.30에 해당한다.
 
 ## 계수
 
@@ -124,12 +124,12 @@ print(starbust.summary(result))
 
 ## 2026년 NOVA 시험과 비교
 
-`python3 tools/nova_2026.py`가 아래 값을 다시 계산해 `results/`에 적는다.
+`python3 tools/nova_2026.py`를 실행하면 아래 값을 다시 계산해 `results/`에 저장한다.
 
 | 항목 | 값 |
 |---|---|
 | 분사시험 1로 정한 계수(HEM) | 토출계수 0.564, 호스의 마찰 보정계수 4.63 |
-| 분사시험 2(같은 계수) | 인젝터 입구 압력의 제곱 평균 오차 0.10 bar, 유량 +9.1 % |
+| 분사시험 2(같은 계수) | 인젝터 입구 압력의 평균 제곱근 오차(RMSE) 0.10 bar, 유량 오차 +9.1 % |
 | 연소시험(같은 계수, HEM) | 추력 −8.6 %, 연소실 압력 −5.4 % (밸브를 연 뒤 0.5 ~ 2.0 s 의 평균, 연소실 압력은 센서 두 개의 평균 기준) |
 | 연소시험의 액체 유출 시간 | 계산 2.8 s, 계측 약 2.5 s |
 | 연소시험의 총역적 | −1.1 % |
@@ -141,14 +141,14 @@ print(starbust.summary(result))
 ## 한계
 
 - 탱크의 액체가 다 빠진 뒤(증기 유출 구간)와 밸브를 연 직후, 점화와 종료의 과도 구간은 경향만 본다. 증기 유출 구간에서 공급라인을 지나며 과열된 증기는 포화 증기의 물성으로 계산한다.
-- 공급라인과 인젝터의 평형 가정, 균질 가정이 맞지 않는 조건에서는 계수가 그 차이를 떠안는다. 한 조건에서 정한 계수를 다른 조건에 옮겨 쓸 때는 시험으로 확인한다.
-- 공급라인의 관과 호스는 마찰로 초킹되는 유량을 넘지 못하게 계산하지만, 밸브 같은 손실 요소는 그 요소에서의 초킹을 따로 확인하지 않는다.
-- 화학 평형 표는 N₂O와 HDPE 조합이다.
-- numba로 번역한 결과는 `starbust/__pycache__/numba-…` 폴더에 저장한다. 소스나 표가 바뀌면 새 폴더에 다시 번역한다.
+- 공급라인과 인젝터의 평형 가정, 균질 가정이 맞지 않는 조건에서는 계수에 그 오차가 반영된다. 한 조건에서 정한 계수를 다른 조건에 적용할 때는 시험으로 확인한다.
+- 공급라인의 관과 호스에서는 마찰로 초킹되는 유량을 넘지 못하게 계산하지만, 밸브 같은 손실 요소에서는 초킹 여부를 따로 확인하지 않는다.
+- 화학 평형 표는 N₂O와 HDPE 조합에 대해 계산한 것이다.
+- numba로 컴파일한 결과는 `starbust/__pycache__/numba-…` 폴더에 저장한다. 소스나 표가 바뀌면 다시 컴파일해 새 폴더에 저장한다.
 
 ## 만든 곳
 
-StaRbuSt는 한국항공대학교 로켓동아리 SRS(The Society of Rocket Study)에서 하이브리드 로켓을 설계하고 지상시험 결과와 견주어 보려고 만들었다. SRS는 2025년과 2026년에 일본 노시로 로켓대회에 출전했고, 이 저장소의 예제와 시험 자료(`testdata/`)는 2026년 NOVA 지상시험의 것이다. MATLAB으로 만든 이전 판은 [StaRbuSt_mvp](https://github.com/Poesy-Lab/StaRbuSt_mvp)에 있다.
+StaRbuSt는 한국항공대학교 로켓동아리 SRS(The Society of Rocket Study)에서 하이브리드 로켓을 설계하고 계산 결과를 지상시험 결과와 비교하기 위해 만들었다. SRS는 2025년과 2026년에 일본 노시로 로켓대회에 출전했고, 이 저장소의 예제와 시험 자료(`testdata/`)는 2026년 NOVA 지상시험에서 얻은 자료다. MATLAB으로 만든 이전 버전은 [StaRbuSt_mvp](https://github.com/Poesy-Lab/StaRbuSt_mvp)에 있다.
 
 | 지상 연소시험 (2025) | 노시로 로켓대회 (2025) | 노시로 로켓대회 (2026) |
 |---|---|---|

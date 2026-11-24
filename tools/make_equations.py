@@ -17,6 +17,9 @@ EQUATIONS = {
     'tank_mass': r'\frac{dm}{dt} = -\dot m_{\mathrm{ox}} - \dot m_{\mathrm{vent}}',
     'tank_energy': r'\frac{dU}{dt} = -\dot m_{\mathrm{ox}}\,h_l - \dot m_{\mathrm{vent}}\,h_v',
     'tank_volume': r'V = \frac{\pi D^2}{4}\,H, \qquad P = P_{\mathrm{sat}}(T)',
+    # 벤트: 포화 증기가 작은 오리피스를 등엔트로피로 지나 초킹된 경우(tank.vent_mdot). n 은 포화 증기의 등엔트로피 지수
+    'vent_flow': r'\dot m_{\mathrm{vent}} = C_{d,\mathrm{vent}}\,A_{\mathrm{vent}}\,\Gamma\sqrt{P\,\rho_v}',
+    'vent_exponent': r'\Gamma = \sqrt{n}\left(\frac{2}{n+1}\right)^{\frac{n+1}{2(n-1)}}, \quad n = \frac{\rho_v\,a_v^{2}}{P}',
     'line_momentum': r'-\frac{dP}{dz} = \varphi\,\frac{f}{D}\,\frac{G^2 v}{2} + G^2\,\frac{dv}{dz}',
     'line_loss': r'\Delta P = K\,\frac{G^2 v}{2} + G^2\,\Delta v',
     'line_valve': r'K = \left(\frac{A}{C_c\,A_b}\right)^{2} - 1',

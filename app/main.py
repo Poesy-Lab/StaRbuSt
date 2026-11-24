@@ -166,6 +166,10 @@ body {{ background: var(--bg); color: {INK}; font-family: {FONT}; transition: ba
 .eqcard .name {{ font-size: 13px; font-weight: 700; color: var(--deep); }}
 .eqcard .name small {{ font-weight: 500; color: {MUTED}; font-size: 12.5px; margin-left: 6px; }}
 .eq {{ padding: 8px 0 6px; overflow-x: auto; }}
+.caution {{ margin: 6px 0 4px; padding-top: 8px; border-top: 1px dashed var(--line); font-size: 12.5px; line-height: 1.55; color: {MUTED}; }}
+.caution b {{ display: block; font-size: 12.5px; color: var(--deep); margin-bottom: 2px; }}
+.caution ul {{ margin: 0; padding-left: 16px; list-style: disc; }}
+.caution li {{ margin: 2px 0; }}
 .eq math {{ font-size: 18.5px; color: {INK}; }}
 .stat {{ flex: 1; min-width: 150px; background: var(--tint2); border-radius: 16px; padding: 15px 18px; }}
 .stat .v {{ font-size: 28px; font-weight: 700; color: var(--deep); line-height: 1.25; }}
@@ -246,6 +250,10 @@ LOSS_TABLE = (
     ('단면 변화', '급확대', '(1 − d²/D²)²'),
     ('', '급축소', '0.5 이하'),
 )
+# 벤트 유량식 카드 아래에 적는 주의: 시험으로 정한 벤트 토출계수가 작게 나오는 경우
+VENT_CAUTIONS = ('벤트 관이 가늘고 긴 경우: 관 마찰로 유량 감소(식은 얇은 오리피스 기준)',
+                 '관 끝을 눌러 좁힌 경우: 실제 유로 단면적이 입력한 지름의 단면적보다 작음',
+                 '탱크 벽과 액체에서 열이 들어오는 경우: 압력 강하가 느려져 압력으로 구한 값이 작아짐(모델은 단열 가정)')
 CHANNEL_NAME = {'P_tank': '탱크 압력(P_tank_bar)', 'P_inj': '인젝터 입구 압력(P_inj_bar)', 'm': '탱크 질량(m_kg)',
                 'P_c': '연소실 압력(P_c_bar)', 'F': '추력(F_N)'}
 VENT_TEMPLATE = ('t_s,P_tank_bar,m_kg\n0.00,45.78,1.000\n0.50,45.40,0.996\n1.00,45.02,0.992\n1.50,44.65,0.988\n2.00,44.28,0.984\n')     # 벤트 시험 자료의 양식. 압력과 질량 가운데 없는 열은 지운다
@@ -854,6 +862,12 @@ def index(example: str = '', tab: str = 'home', section: str = 'tank'):
                 with ui.element('div').classes('eqcard'):
                     ui.html(f'<div class="name">{name}<small>{note}</small></div>', sanitize=False)
                     ui.html(equation(key), sanitize=False).classes('eq')
+            if s.section == 'tank':                                   # 벤트 유량식과, 시험으로 정한 토출계수를 볼 때의 주의
+                with ui.element('div').classes('eqcard'):
+                    ui.html('<div class="name">벤트 유량<small>포화 증기, 초킹</small></div>', sanitize=False)
+                    ui.html(equation('vent_flow'), sanitize=False).classes('eq')
+                    ui.html(equation('vent_exponent'), sanitize=False).classes('eq')
+                    ui.html('<div class="caution"><b>토출계수가 작게 나오는 경우</b><ul>' + ''.join(f'<li>{t}</li>' for t in VENT_CAUTIONS) + '</ul></div>', sanitize=False)
 
     @ui.refreshable
     def input_view():

@@ -561,7 +561,7 @@ def index(example: str = '', tab: str = 'home', section: str = 'tank'):
                                           ('hot_fire', '연소시험', '연소실과 노즐까지 계산해 연소실 압력과 추력을 구합니다.')):
                     hot = mode == 'hot_fire'
                     with ui.row().classes('card mode items-center gap-4 no-wrap' + (' hot' if hot else '') + (' on' if s.picked == mode else '')) \
-                            .on('click', lambda mode=mode: pick_mode(mode)):
+                            .on('click', lambda mode=mode: (pick_mode(mode), go('input'))):       # 모드를 고르면 바로 입력 화면으로 간다
                         ui.html(icon(mode, 32), sanitize=False).classes('badge ' + ('hot' if hot else 'cold'))
                         with ui.column().classes('gap-0'):
                             ui.label(title).classes('big')

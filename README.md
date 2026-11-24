@@ -163,4 +163,4 @@ StaRbuSt는 한국항공대학교 로켓동아리 SRS(The Society of Rocket Stud
 
 버전 번호는 `starbust/__init__.py`의 `__version__` 한 곳에 적는다. 화면 왼쪽 아래와 설치 파일의 이름, 추력 곡선 파일(.eng)의 첫 줄에 이 번호가 들어간다.
 
-코드는 MIT 라이선스다(`LICENSE`). 수식 글꼴과 SRS 로고, 사진, 설치 파일에 함께 들어가는 패키지의 라이선스는 `THIRD_PARTY.md`에 적었다.
+코드는 MIT 라이선스다(`LICENSE`). 수식 글꼴과 SRS 로고, 사진, 설치 파일에 함께 들어가는 패키지의 라이선스 정보는 `THIRD_PARTY.md`에 적었다.

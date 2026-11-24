@@ -1,7 +1,8 @@
 """설치한 앱으로 실행할 때의 창과 끝내기.
 
-앱은 이 컴퓨터 안에서만 보이는 작은 서버를 띄우고 그 화면을 창 하나에 연다.
-    창   Edge 나 Chrome 이 있으면 주소창과 탭이 없는 앱 창으로 연다. 없으면 기본 브라우저의 탭으로 연다.
+앱은 이 컴퓨터 안에서만 접속되는 서버를 띄우고 그 화면을 창 하나에 연다.
+    창   pywebview 가 있으면 앱이 직접 창을 띄운다(macOS 는 WebKit, Windows 는 WebView2). Dock 과 작업 표시줄에 이 앱의 아이콘이 뜬다.
+         pywebview 를 쓸 수 없으면 Edge 나 Chrome 의 앱 창으로, 그것도 없으면 기본 브라우저의 탭으로 연다.
     끝   앱 창을 닫으면 서버도 끝난다. 브라우저 탭으로 열린 경우에는 탭을 모두 닫고 몇 초 뒤에 끝난다.
 """
 import os
@@ -66,6 +67,107 @@ def open_window(url):
             pass
     webbrowser.open(url)
     return None
+
+
+STATE = {'window': None}          # 앱이 직접 띄운 창(pywebview). 없으면 브라우저로 연 것이다
+
+
+def native_available():
+    """앱이 직접 창을 띄울 수 있는가. Windows 에서는 WebView2 가 깔려 있어야 한다(없으면 옛 방식의 Internet Explorer 창이 되어 화면이 깨진다)."""
+    try:
+        import webview                                       # noqa: F401
+    except Exception:
+        return False
+    if sys.platform == 'win32':
+        try:
+            import winreg
+            key = r'Microsoft\EdgeUpdate\Clients\{F3017226-FE2A-4295-8BDF-00C3A9A7E4C5}'
+            for hive, base in ((winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\WOW6432Node\\'), (winreg.HKEY_LOCAL_MACHINE, 'SOFTWARE\\'), (winreg.HKEY_CURRENT_USER, 'SOFTWARE\\')):
+                try:
+                    with winreg.OpenKey(hive, base + key) as k:
+                        if winreg.QueryValueEx(k, 'pv')[0] not in ('', '0.0.0.0'):
+                            return True
+                except OSError:
+                    continue
+            return False
+        except Exception:
+            return False
+    return sys.platform == 'darwin'
+
+
+def wait_for(port, seconds=60.0):
+    """서버가 접속을 받을 때까지 기다린다."""
+    until = time.monotonic() + seconds
+    while time.monotonic() < until:
+        try:
+            socket.create_connection(('127.0.0.1', port), timeout=0.3).close()
+            return True
+        except OSError:
+            time.sleep(0.1)
+    return False
+
+
+def run_native(serve, port):
+    """서버(serve)를 뒤에서 돌리고 주 스레드에서 앱 창을 연다. 창을 닫으면 앱을 끝낸다. 창을 띄우지 못하면 False 를 돌려준다(서버는 떠 있다)."""
+    import webview
+    threading.Thread(target=serve, daemon=True).start()
+    if not wait_for(port):
+        return False
+    try:
+        webview.settings['OPEN_EXTERNAL_LINKS_IN_BROWSER'] = True           # 바깥 링크는 기본 브라우저로
+        STATE['window'] = webview.create_window(NAME, f'http://127.0.0.1:{port}', width=WINDOW[0], height=WINDOW[1], min_size=(1040, 700))
+        webview.start(gui='edgechromium' if sys.platform == 'win32' else None)
+    except Exception as error:
+        print('앱 창을 띄우지 못했습니다:', type(error).__name__, error, flush=True)
+        STATE['window'] = None
+        return False
+    os._exit(0)                                              # 창을 닫았다
+
+
+def save_path(name, description, extension):
+    """앱 창의 저장 창을 띄워 고른 경로를 돌려준다(취소하면 빈 글). 앱이 직접 띄운 창이 아니면 None 이고 그때는 브라우저의 방식으로 저장한다."""
+    window = STATE['window']
+    if window is None:
+        return None
+    import webview
+    kind = webview.FileDialog.SAVE if hasattr(webview, 'FileDialog') else webview.SAVE_DIALOG
+    chosen = window.create_file_dialog(kind, save_filename=name, file_types=(f'{description} (*{extension})',))
+    if not chosen:
+        return ''
+    path = chosen if isinstance(chosen, str) else chosen[0]
+    return path if path.lower().endswith(extension) else path + extension
+
+
+def quit_app():
+    """앱을 끝낸다(업데이트를 시작한 뒤에 부른다)."""
+    os._exit(0)
+
+
+def watch_browser(app, url, state=None):
+    """서버가 뜬 뒤에 부른다: 브라우저로 화면을 열고, 닫히면 서버를 끝낸다."""
+    state = state or {'open': 0, 'seen': False, 'last': time.monotonic()}
+
+    def connected():
+        state['open'] += 1
+        state['seen'] = True
+
+    def disconnected():
+        state['open'] = max(0, state['open'] - 1)
+        state['last'] = time.monotonic()
+    app.on_connect(connected)
+    app.on_disconnect(disconnected)
+    started = time.monotonic()
+    window = open_window(url)
+    if window is not None:
+        window.wait()
+        if time.monotonic() - started > 5.0:
+            app.shutdown()
+            return
+    while True:
+        time.sleep(1.0)
+        if state['seen'] and state['open'] == 0 and time.monotonic() - state['last'] > IDLE_S:
+            app.shutdown()
+            return
 
 
 def attach(app, url):

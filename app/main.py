@@ -26,6 +26,7 @@ from starbust import calibrate, export, feedline, props, testdata   # noqa: E402
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import desktop                                                      # noqa: E402
+import update                                                       # noqa: E402
 from icons import icon, schematic, sensors                          # noqa: E402
 
 ASSETS = pathlib.Path(__file__).parent / 'assets'
@@ -121,6 +122,14 @@ body {{ background: var(--bg); color: {INK}; font-family: {FONT}; transition: ba
 .shot figcaption {{ position: absolute; left: 14px; top: 12px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
                    color: #fff; background: rgba(15, 30, 48, .55); }}
 .about .q-carousel {{ border-radius: 16px; width: 100%; }}
+.notes {{ width: 640px; max-width: 92vw; border-radius: 24px; padding: 22px 26px 18px; gap: 10px; }}
+.notes h1 {{ font-size: 22px; font-weight: 800; margin: 0 0 6px; line-height: 1.3; }}
+.notes h2 {{ font-size: 17px; font-weight: 800; margin: 14px 0 4px; line-height: 1.3; color: var(--deep); }}
+.notes p, .notes li {{ font-size: 14.5px; line-height: 1.65; }}
+.notes ul {{ padding-left: 20px; margin: 4px 0; list-style: disc; }}
+.newver {{ display: flex; align-items: center; gap: 8px; margin: 0 4px 10px; padding: 9px 12px; border-radius: 14px; cursor: pointer; font-size: 13px; font-weight: 700;
+          color: #17324F; background: #FFE48A; box-shadow: 0 6px 16px rgba(var(--shadow), .28); }}
+.newver small {{ display: block; font-size: 11.5px; font-weight: 500; opacity: .85; }}
 .about a {{ color: var(--deep); font-weight: 600; text-decoration: none; }}
 .about a:hover {{ text-decoration: underline; }}
 .badge {{ width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex: none;
@@ -205,6 +214,8 @@ async function starbustSave(name, text, mime, extension, description) {
 </script>'''
 
 NAV = (('home', '시작'), ('input', '입력'), ('result', '결과'), ('compare', '시험 비교'), ('export', '내보내기'))
+UPDATE = {'done': False, 'found': None}          # 시작할 때 한 번 확인한 새 버전(update.check)
+CHANGES = (ROOT / 'CHANGELOG.md').read_text(encoding='utf-8') if (ROOT / 'CHANGELOG.md').exists() else '# 패치 노트'
 # 왼쪽 아래의 SRS 로고를 누르면 나오는 사진(app/assets/photos)과 링크
 PHOTOS = (('noshiro_2026', '2026년 일본 노시로 로켓대회'), ('hotfire_2025', '2025년 지상 연소시험'), ('noshiro_2025', '2025년 일본 노시로 로켓대회'),
           ('teststand_2025', '2025년 지상시험 준비'), ('team_2026', '2026년 SRS'))
@@ -484,6 +495,15 @@ def index(example: str = '', tab: str = 'home', section: str = 'tank'):
         mime, extension, description, bom = {'csv': ('text/csv', '.csv', 'CSV 파일', True), 'json': ('application/json', '.json', 'JSON 파일', False),
                                              'eng': ('text/plain', '.eng', '추력 곡선(RASP)', False)}[kind]
         body = ('\ufeff' if bom else '') + text                       # 엑셀이 한글을 읽도록 CSV 앞에 표시를 붙인다
+        path = await run.io_bound(desktop.save_path, name, description, extension)
+        if path is not None:                                          # 앱이 직접 띄운 창: 고른 자리에 바로 쓴다
+            if path:
+                try:
+                    pathlib.Path(path).write_text(body, encoding='utf-8')
+                    ui.notify(f'{pathlib.Path(path).name} 파일로 저장했습니다.', type='positive')
+                except OSError as error:
+                    ui.notify(f'저장하지 못했습니다: {error}', type='negative', multi_line=True)
+            return
         try:
             done = await ui.run_javascript(f'return await starbustSave({json.dumps(name)}, {json.dumps(body)}, {json.dumps(mime)}, '
                                            f'{json.dumps(extension)}, {json.dumps(description)})', timeout=900)
@@ -1096,7 +1116,54 @@ def index(example: str = '', tab: str = 'home', section: str = 'tank'):
             for label, url in LINKS:
                 ui.html(f'<a href="{url}" target="_blank" rel="noopener">{label}</a>', sanitize=False)
             ui.space()
+            ui.button('패치 노트', on_click=lambda: (about.close(), notes.open())).props('flat rounded no-caps color=primary')
             ui.button('닫기', on_click=about.close).props('flat rounded no-caps color=primary')
+
+    # ---------------------------------------------------------------- 패치 노트와 새 버전 알림
+    with ui.dialog() as notes, ui.card().classes('notes'):
+        ui.markdown(CHANGES)
+        with ui.row().classes('w-full justify-end'):
+            ui.button('닫기', on_click=notes.close).props('flat rounded no-caps color=primary')
+
+    with ui.dialog() as newer, ui.card().classes('notes'):
+        @ui.refreshable
+        def newer_body():
+            found = UPDATE['found']
+            if not found:
+                return
+            ui.markdown(f'# 새 버전 v{found["version"]}\n\n지금 쓰는 버전은 v{starbust.__version__}입니다.\n\n' + (found['notes'] or '바뀐 점은 다운로드 페이지에 있습니다.'))
+
+            async def update_now():
+                note = ui.notification('새 버전을 내려받는 중입니다', spinner=True, timeout=None)
+                try:
+                    path = await run.io_bound(update.download, found['asset'], desktop.user_dir() / 'updates')
+                    update.apply(path)
+                except Exception as error:
+                    note.dismiss()
+                    ui.notify(f'업데이트하지 못했습니다: {error}', type='negative', multi_line=True)
+                    return
+                note.message = '앱을 다시 시작합니다'
+                ui.timer(1.2, desktop.quit_app, once=True)
+            with ui.row().classes('w-full items-center gap-4'):
+                ui.html(f'<a href="{found["page"]}" target="_blank" rel="noopener">다운로드 페이지 열기</a>', sanitize=False)
+                ui.space()
+                ui.button('나중에', on_click=newer.close).props('flat rounded no-caps color=primary')
+                if found['asset'] and update.can_apply():
+                    ui.button('업데이트', icon='download', color=None, on_click=update_now).props('unelevated rounded no-caps').classes('cta')
+        newer_body()
+
+    @ui.refreshable
+    def update_notice():
+        found = UPDATE['found']
+        if found:
+            ui.html(f'<div class="newver"><span style="font-size: 17px; font-weight: 800">↑</span><div>새 버전 v{found["version"]}<small>눌러서 바뀐 점 보기</small></div></div>',
+                    sanitize=False).on('click', lambda: (newer_body.refresh(), newer.open()))
+
+    def poll_update():
+        if UPDATE['done']:
+            poll.deactivate()
+            update_notice.refresh()
+    poll = ui.timer(2.0, poll_update)
 
     apply_theme()
     with ui.element('div').classes('shell'):
@@ -1105,6 +1172,7 @@ def index(example: str = '', tab: str = 'home', section: str = 'tank'):
             with ui.element('nav').classes('navs'):
                 nav()
             ui.element('div').classes('grow')
+            update_notice()
             ui.html('<div class="credit" title="StaRbuSt와 SRS"><img class="srs" src="/assets/srs_logo.png" alt="The Society of Rocket Study">'
                     f'<div class="version">v{starbust.__version__}</div></div>', sanitize=False).on('click', about.open)
         with ui.element('main').classes('main'):
@@ -1128,14 +1196,28 @@ def warm_up():
     starbust.simulate(cfg)
 
 
+def look_for_update():
+    """새 버전이 있는지 한 번 확인한다(인터넷에 연결되어 있지 않으면 아무 일도 없다). 화면이 먼저 뜨도록 따로 돌린다."""
+    UPDATE['found'] = update.check(starbust.__version__)
+    UPDATE['done'] = True
+
+
 app.add_static_files('/assets', ASSETS)
+app.on_startup(lambda: threading.Thread(target=look_for_update, daemon=True).start())
 app.on_startup(lambda: threading.Thread(target=warm_up, daemon=True).start())
 
 if __name__ in {'__main__', '__mp_main__'}:
     if '--app' in sys.argv or getattr(sys, 'frozen', False):        # 설치한 앱: 빈 포트에 띄우고 앱 창으로 연다(desktop.py)
-        import desktop
         port = desktop.free_port()
-        desktop.attach(app, f'http://127.0.0.1:{port}')
-        ui.run(title='StaRbuSt', favicon=ASSETS / 'icon.svg', host='127.0.0.1', port=port, reload=False, show=False, language='ko-KR')
+        url = f'http://127.0.0.1:{port}'
+
+        def serve():
+            ui.run(title='StaRbuSt', favicon=ASSETS / 'icon.svg', host='127.0.0.1', port=port, reload=False, show=False, language='ko-KR')
+        if desktop.native_available():                              # 앱이 직접 창을 띄운다. 창을 닫으면 여기서 끝난다
+            desktop.run_native(serve, port)
+            desktop.watch_browser(app, url)                         # 창을 띄우지 못했을 때만 여기로 온다: 브라우저로 연다
+        else:
+            desktop.attach(app, url)
+            serve()
     else:
         ui.run(title='StaRbuSt', favicon=ASSETS / 'icon.svg', host='127.0.0.1', port=8327, reload=False, show='--no-browser' not in sys.argv, language='ko-KR')

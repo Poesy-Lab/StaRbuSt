@@ -21,6 +21,11 @@ try:
     import numba                    # noqa: F401
 except Exception:                   # numba 없이 만든 앱도 돌아간다(느리다)
     pass
+try:
+    import webview                  # noqa: F401
+except Exception:                   # pywebview 없이 만든 앱은 브라우저의 앱 창으로 연다
+    pass
+import certifi                      # noqa: F401, E402  (새 버전을 확인할 때 쓰는 인증서 묶음)
 
 
 def main():
@@ -42,7 +47,7 @@ def main():
             cfg = starbust.load(base / 'examples' / 'nova_hot_fire.json')
             cfg['time']['t_end_s'] = 0.2
             result = starbust.simulate(cfg)
-            report.write_text(f'ok numba={_jit.HAVE_NUMBA} steps={len(result["t"])} F={result["F"][5]:.1f}', encoding='utf-8')
+            report.write_text(f'ok numba={_jit.HAVE_NUMBA} steps={len(result["t"])} F={result["F"][5]:.1f} window={desktop.native_available()}', encoding='utf-8')
         except Exception as error:
             report.write_text(f'failed {type(error).__name__}: {error}', encoding='utf-8')
         return

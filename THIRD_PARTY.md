@@ -24,6 +24,9 @@ N₂O 포화 물성표와 화학 평형 표(`starbust/data/`)는 CoolProp과 NAS
 | NiceGUI | MIT |
 | Plotly | MIT |
 | FastAPI | MIT |
+| pywebview (앱 창) | BSD 3-Clause |
+| PyObjC (macOS), Python.NET (Windows) | MIT |
+| certifi | MPL-2.0 |
 | Starlette, Uvicorn | BSD-3-Clause |
 | PyInstaller (부트로더) | GPL v2 이상. 만든 앱의 배포를 허용하는 예외 조항이 있다 |
 

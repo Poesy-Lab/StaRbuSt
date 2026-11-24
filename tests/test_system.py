@@ -180,3 +180,19 @@ def test_valve_by_flow_coefficient():
     bore = feedline.valve_loss({'bore_mm': 6.4, 'Cc': 0.62}, 7.747)
     d, L, phi, K = feedline.build([{'type': 'pipe', 'd_mm': 7.747, 'L_m': 0.05}, {'type': 'valve', 'bore_mm': 6.4, 'Cc': 0.62}])
     assert K[1] == pytest.approx(bore) and bore == pytest.approx((7.747 ** 2 / (0.62 * 6.4 ** 2)) ** 2 - 1.0)       # 4.585
+
+
+def test_update_version_and_notes():
+    """버전 비교와 패치 노트 뽑기(앱의 새 버전 알림과 릴리스 설명에 쓴다)."""
+    import importlib.util
+    import sys
+    root = pathlib.Path(__file__).resolve().parents[1]
+    sys.path.insert(0, str(root / 'app'))
+    import update
+    assert update.version_key('v1.0.10') > update.version_key('1.0.9') > update.version_key('1.0')
+    assert update.version_key(starbust.__version__) == update.version_key('v' + starbust.__version__)
+    spec = importlib.util.spec_from_file_location('release_notes', root / 'packaging' / 'release_notes.py')
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    assert module.notes(starbust.__version__)                       # 지금 버전의 패치 노트가 CHANGELOG.md 에 있어야 한다
+    assert module.notes('9.9.9', '## 9.9.9 (날짜)\n\n- 가\n\n## 9.9.8\n\n- 나\n') == '- 가'

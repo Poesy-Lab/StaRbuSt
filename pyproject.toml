@@ -7,7 +7,7 @@ dependencies = ["numpy"]
 
 [project.optional-dependencies]
 fast = ["numba"]
-app = ["nicegui>=4", "plotly"]
+app = ["nicegui>=4", "plotly", "pywebview"]
 dev = ["pytest", "CoolProp", "rocketcea"]
 
 [tool.setuptools.packages.find]

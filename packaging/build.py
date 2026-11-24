@@ -4,7 +4,7 @@
     python packaging/build.py            앱을 만든다
     python packaging/build.py --icons    아이콘 파일(packaging/icons)만 다시 만든다(macOS, rsvg-convert 와 ImageMagick 필요)
 
-필요한 것:  pip install pyinstaller numpy numba plotly nicegui
+필요한 것:  pip install pyinstaller numpy numba plotly nicegui pywebview
 나오는 것(packaging/dist):
     macOS     StaRbuSt.app 과 StaRbuSt-<버전>-macos-<arm64|x86_64>.dmg (열어서 앱을 응용 프로그램 폴더로 끌어다 놓는다)
     Windows   StaRbuSt 폴더(StaRbuSt.exe). Inno Setup(iscc)이 있으면 설치 파일 StaRbuSt-<버전>-windows-setup.exe 도 만든다
@@ -80,7 +80,8 @@ def spec_text():
     """PyInstaller 설정 파일의 내용."""
     import nicegui
     datas = [(str(SOURCE / 'app'), 'app'), (str(SOURCE / 'starbust'), 'starbust'), (str(ROOT / 'examples'), 'examples'),
-             (str(ROOT / 'testdata' / 'nova_2026'), 'testdata/nova_2026'), (str(pathlib.Path(nicegui.__file__).parent), 'nicegui')]
+             (str(ROOT / 'testdata' / 'nova_2026'), 'testdata/nova_2026'), (str(ROOT / 'CHANGELOG.md'), '.'),
+             (str(pathlib.Path(nicegui.__file__).parent), 'nicegui')]
     icon = ICONS / (f'{NAME}.icns' if sys.platform == 'darwin' else f'{NAME}.ico')
     return f'''# build.py 가 만든 파일이다. 고치려면 build.py 를 고친다.
 from PyInstaller.utils.hooks import collect_data_files
@@ -93,8 +94,8 @@ exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name={NAME!r}, console=Fals
           version={str(WORK / 'version_info.txt')!r} if {sys.platform == 'win32'} else None)
 coll = COLLECT(exe, a.binaries, a.datas, name={NAME!r})
 app = BUNDLE(coll, name={NAME + '.app'!r}, icon={str(icon)!r}, bundle_identifier={BUNDLE_ID!r}, version={VERSION!r},
-             info_plist={{'CFBundleDisplayName': {NAME!r}, 'CFBundleShortVersionString': {VERSION!r}, 'NSHighResolutionCapable': True,
-                         'LSUIElement': True, 'LSMinimumSystemVersion': '11.0',
+             info_plist={{'CFBundleDisplayName': {NAME!r}, 'CFBundleDevelopmentRegion': 'ko', 'CFBundleLocalizations': ['ko', 'en'], 'CFBundleShortVersionString': {VERSION!r}, 'NSHighResolutionCapable': True,
+                         'LSMinimumSystemVersion': '11.0', 'NSAppTransportSecurity': {{'NSAllowsLocalNetworking': True, 'NSAllowsArbitraryLoads': True}},
                          'NSHumanReadableCopyright': 'The Society of Rocket Study'}})
 '''
 

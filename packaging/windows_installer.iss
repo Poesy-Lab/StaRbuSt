@@ -53,6 +53,8 @@ Name: "{autodesktop}\StaRbuSt"; Filename: "{app}\StaRbuSt.exe"; Tasks: desktopic
 
 [Run]
 Filename: "{app}\StaRbuSt.exe"; Description: "{cm:LaunchProgram,StaRbuSt}"; Flags: nowait postinstall skipifsilent
+; 앱의 업데이트 버튼은 이 설치 파일을 조용히(/SILENT) 돌린다. 그때는 설치가 끝나면 앱을 다시 연다
+Filename: "{app}\StaRbuSt.exe"; Flags: nowait; Check: WizardSilent
 
 [UninstallDelete]
 ; 앱이 사용자 폴더에 만든 로그와 번역 결과, 창 설정

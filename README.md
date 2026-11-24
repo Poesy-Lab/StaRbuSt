@@ -34,15 +34,16 @@ Python 없이 쓰려면 설치 파일로 설치한다. 설치 파일은 저장�
 | macOS | `StaRbuSt-<버전>-macos-<arm64 또는 x86_64>.dmg`를 열고 StaRbuSt를 응용 프로그램 폴더로 끌어다 놓는다. Apple Silicon Mac은 arm64, Intel Mac은 x86_64 파일을 쓴다 |
 | Windows | `StaRbuSt-<버전>-windows-setup.exe`를 실행한다. 시작 메뉴와 바탕 화면에 아이콘이 생긴다 |
 
-앱을 실행하면 로컬 서버가 켜지고 화면이 새 창으로 열린다. Edge나 Chrome이 있으면 주소창이 없는 앱 창으로, 없으면 기본 브라우저의 탭으로 열린다. 창을 닫으면 앱도 종료된다. 인터넷 연결은 필요 없다.
+앱을 실행하면 로컬 서버가 켜지고 화면이 앱 창으로 열린다. macOS에서는 WebKit으로, Windows에서는 WebView2로 창을 띄운다. WebView2가 없는 Windows에서는 Edge나 Chrome의 앱 창으로, 둘 다 없으면 기본 브라우저의 탭으로 화면이 열린다. 창을 닫으면 앱도 종료된다. 계산에는 인터넷 연결이 필요 없다.
 
 - 앱에 개발자 서명이 없어서 처음 실행할 때 경고가 나온다. macOS에서는 앱을 마우스 오른쪽 버튼으로 눌러 "열기"를 고르거나 시스템 설정의 개인정보 보호 및 보안에서 "그래도 열기"를 누른다. Windows에서는 "추가 정보"를 누른 뒤 "실행"을 누른다.
+- 인터넷에 연결되어 있으면 앱을 시작할 때 GitHub에서 새 버전이 있는지 확인한다. 새 버전이 있으면 화면 왼쪽 아래에 알림이 나오고, 알림을 눌러 바뀐 점을 확인한 뒤 업데이트할 수 있다.
 - 로그와 계산 준비 파일은 사용자 폴더에 둔다(macOS `~/Library/Application Support/StaRbuSt`, Windows `%LOCALAPPDATA%\StaRbuSt`). 앱이 열리지 않으면 그 폴더의 `starbust.log`를 본다.
 
 설치 파일은 `packaging/build.py`로 만든다. 실행하는 컴퓨터의 운영체제용 파일이 생성된다.
 
 ```bash
-pip install pyinstaller numpy numba plotly nicegui
+pip install pyinstaller numpy numba plotly nicegui pywebview
 python packaging/build.py
 ```
 
@@ -161,6 +162,6 @@ StaRbuSt는 한국항공대학교 로켓동아리 SRS(The Society of Rocket Stud
 
 ## 버전과 라이선스
 
-버전 번호는 `starbust/__init__.py`의 `__version__` 한 곳에 적는다. 화면 왼쪽 아래와 설치 파일의 이름, 추력 곡선 파일(.eng)의 첫 줄에 이 번호가 들어간다.
+버전마다 바뀐 점은 `CHANGELOG.md`(패치 노트)에 적는다. 버전 번호는 `starbust/__init__.py`의 `__version__` 한 곳에 적는다. 화면 왼쪽 아래와 설치 파일의 이름, 추력 곡선 파일(.eng)의 첫 줄에 이 번호가 들어간다.
 
 코드는 MIT 라이선스다(`LICENSE`). 수식 글꼴과 SRS 로고, 사진, 설치 파일에 함께 들어가는 패키지의 라이선스 정보는 `THIRD_PARTY.md`에 적었다.

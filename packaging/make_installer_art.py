@@ -4,7 +4,7 @@
     python3 packaging/make_installer_art.py
 
     wizard_large.png      Windows 설치창의 왼쪽 큰 그림(처음과 마지막 쪽). 538 x 1030, 비율 164:314
-    wizard_small.png      Windows 설치창의 오른쪽 위 작은 그림(나머지 쪽과 진행 창). 160 x 160
+    wizard_small.png      Windows 설치창의 오른쪽 위 작은 그림(나머지 쪽과 진행 창). 160 x 160, 둘레에 투명한 여백
     dmg_background.tiff   macOS 설치 이미지를 열었을 때 창의 바탕. 660 x 420 pt(1 배와 2 배가 함께 들어 있다)
 색은 앱의 시작 화면(연두)과 같고 로고는 app/assets 의 것을 그대로 쓴다.
 """
@@ -64,8 +64,12 @@ def wizard_large(w=538, h=1030):
     image.convert('RGB').save(OUT / 'wizard_large.png', optimize=True)
 
 
-def wizard_small(size=160):
-    render((ASSETS / 'icon.svg').read_text(encoding='utf-8'), size).save(OUT / 'wizard_small.png', optimize=True)
+def wizard_small(size=160, margin=0.11):
+    """앱 아이콘 둘레에 투명한 여백을 둔다(창의 위쪽과 오른쪽 모서리에 붙어 보이지 않게)."""
+    icon = render((ASSETS / 'icon.svg').read_text(encoding='utf-8'), round(size * (1 - 2 * margin)))
+    canvas = Image.new('RGBA', (size, size), (0, 0, 0, 0))
+    canvas.alpha_composite(icon, ((size - icon.width) // 2, (size - icon.height) // 2))
+    canvas.save(OUT / 'wizard_small.png', optimize=True)
 
 
 def dmg_background(w=660, h=420):

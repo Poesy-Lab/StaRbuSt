@@ -14,9 +14,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-14, macos-15-intel, windows-latest]
+        os: [macos-15, macos-15-intel, windows-latest]
     runs-on: ${{ matrix.os }}
-    # Intel Mac 용은 필요한 패키지의 배포 파일이 없어지면 만들지 못할 수 있다. 그때도 나머지 설치 파일은 나오게 한다.
+    # Intel Mac 용이 실패해도 나머지 설치 파일은 나오게 한다.
     continue-on-error: ${{ matrix.os == 'macos-15-intel' }}
     env:
       PYTHONUTF8: '1'
@@ -25,6 +25,10 @@ jobs:
       - uses: actions/setup-python@v6
         with:
           python-version: '3.12'
+      - name: numba 버전 고정 (Intel Mac)
+        # llvmlite 는 0.45, numba 는 0.62 가 Intel Mac 용 배포 파일이 있는 마지막 버전이다
+        if: matrix.os == 'macos-15-intel'
+        run: python -m pip install "numba<0.63"
       - name: 필요한 패키지 설치
         run: python -m pip install pyinstaller numpy numba plotly nicegui pytest
       - name: Inno Setup 설치 (Windows)

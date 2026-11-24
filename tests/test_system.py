@@ -215,3 +215,20 @@ def test_vent_coefficient_from_closed_valve_test():
     with pytest.raises(ValueError):
         calibrate.fit_vent({'t': t, 'F': P}, guess, 1.0, 11.0)
 
+
+def test_hot_fire_coefficients(hot):
+    """계산 결과를 시험 자료로 삼아 연소시험 보정을 돌리면 입력의 후퇴율 계수와 특성속도 효율이 되나온다."""
+    from starbust import calibrate
+    from starbust._jit import trapezoid as area
+    cfg = starbust.load(EXAMPLES / 'nova_hot_fire.json')
+    fuel = area(hot['mdot_f'], hot['t'])
+    ox = area(hot['mdot_ox'], hot['t'])                              # 연소실로 간 산화제(벤트와 탱크에 남은 증기는 뺀 값)
+    test = {'t': hot['t'], 'P_c': hot['P_c']}
+    guess = starbust.load(EXAMPLES / 'nova_hot_fire.json')
+    guess['grain']['a'], guess['chamber']['eta_cstar'] = 0.03, 0.8
+    fit = calibrate.fit_hot_fire(test, guess, fuel, ox)
+    assert fit['a'] == pytest.approx(cfg['grain']['a'], rel=0.02)
+    assert fit['eta'] == pytest.approx(cfg['chamber']['eta_cstar'], rel=0.03)      # 이론 c* 를 전체 혼합비 하나로 잡는 데서 오는 차이
+    only_a = calibrate.fit_hot_fire({'t': hot['t']}, cfg, fuel)
+    assert only_a['eta'] is None and only_a['a'] == pytest.approx(cfg['grain']['a'], rel=0.01)
+

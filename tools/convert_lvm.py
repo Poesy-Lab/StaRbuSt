@@ -55,6 +55,10 @@ NOTES = {
         "추력은 점화 직전 [99.5, 104.3] s 의 평균이 −3.12 N 이다. 연소가 끝난 뒤에는 +28.8 N 으로 돌아와 영점이 그만큼 움직였다",
     ],
 }
+# 시험 기록에 적힌 추진제 질량 [kg]. 연료는 연소 전후의 그레인 질량이다. 화면의 "이 시험으로 계수 정하기"가 이 값을 읽는다
+PROPELLANT = {
+    "hot_fire_1": {"fuel_before_kg": 0.56, "fuel_after_kg": 0.36, "oxidizer_consumed_kg": 1.0},
+}
 THRUST_ONSET_N = 100.0   # 연소시험의 시각 0: 추력(10 ms 이동평균)이 이 값을 처음 넘는 시각
 THRUST_SMOOTH_S = 0.01
 DELAY_SEARCH_S = (-0.2, 0.8)     # 응답 지연을 찾는 범위 [s]
@@ -216,6 +220,12 @@ def convert(out_id, key, title, meta, raw_dir, out_dir):
         },
         "channels": chan_info, "initial_conditions": ic, "notes": notes,
     }
+    if out_id in PROPELLANT:
+        mass = PROPELLANT[out_id]
+        doc["propellant"] = {
+            **mass, "fuel_consumed_kg": round(mass["fuel_before_kg"] - mass["fuel_after_kg"], 4),
+            "note": "시험 기록에 적힌 값이다. 연료 소모량은 연소 전후 그레인 질량의 차이다. 산화제 소모량은 기록의 산화제 질량과 같은 값으로 적혀 있다",
+        }
     (out_dir / f"{out_id}.json").write_text(
         json.dumps(doc, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     return df, t0

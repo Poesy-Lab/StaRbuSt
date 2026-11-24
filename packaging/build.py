@@ -3,6 +3,7 @@
 
     python packaging/build.py            앱을 만든다
     python packaging/build.py --icons    아이콘 파일(packaging/icons)만 다시 만든다(macOS, rsvg-convert 와 ImageMagick 필요)
+    python packaging/build.py --dmg      이미 만든 앱으로 설치 이미지(.dmg)만 다시 만든다(macOS)
 
 필요한 것:  pip install pyinstaller numpy numba plotly nicegui pywebview certifi
 나오는 것(packaging/dist):
@@ -27,6 +28,8 @@ SOURCE = WORK / 'source'                 # 앱에 넣을 화면 코드와 계산
 NAME = 'StaRbuSt'
 VERSION = re.search(r"__version__ = '([^']+)'", (ROOT / 'starbust' / '__init__.py').read_text(encoding='utf-8')).group(1)     # 버전 번호의 원본
 BUNDLE_ID = 'app.starbust.simulator'
+DMG_WINDOW = (660, 420)                 # 설치 이미지를 열었을 때 창 안쪽의 크기 [pt]. 바탕 그림(installer/dmg_background.tiff)과 같다
+DMG_ICONS = ((f'{NAME}.app', (165, 215)), ('Applications', (495, 215)))       # 아이콘 가운데의 자리. 바탕 그림의 화살표가 그 사이에 있다
 # 만드는 환경에 깔려 있어도 이 앱은 쓰지 않는 큰 패키지
 EXCLUDE = ('matplotlib', 'scipy', 'pandas', 'IPython', 'jupyter', 'notebook', 'tkinter', 'PyQt5', 'PyQt6', 'PySide2', 'PySide6',
            'pytest', 'sympy', 'torch', 'tensorflow', 'sklearn', 'skimage', 'cv2', 'bokeh', 'dask', 'xarray', 'h5py', 'numexpr',
@@ -137,6 +140,83 @@ def selftest():
         raise SystemExit('만든 앱이 계산을 하지 못하거나 numba 없이 돌아갑니다. packaging/build 의 기록을 확인하세요.')
 
 
+def styled_dmg(stage, dmg):
+    """바탕 그림과 아이콘 자리를 넣은 설치 이미지를 만든다. 창의 모양은 Finder 가 기록하므로, Finder 를 쓸 수 없으면 False 를 돌려준다."""
+    rw = WORK / 'rw.dmg'
+    rw.unlink(missing_ok=True)
+    (stage / '.background').mkdir(exist_ok=True)
+    shutil.copy(HERE / 'installer' / 'dmg_background.tiff', stage / '.background' / 'background.tiff')
+    subprocess.run(['hdiutil', 'create', '-volname', NAME, '-srcfolder', str(stage), '-ov', '-format', 'UDRW', '-fs', 'HFS+', str(rw)], check=True)
+    attached = subprocess.run(['hdiutil', 'attach', str(rw), '-readwrite', '-noverify', '-noautoopen'], check=True, capture_output=True, text=True).stdout
+    mount = next(line.split('\t')[-1].strip() for line in attached.splitlines() if '/Volumes/' in line)
+    places = '\n'.join(f'    set position of item "{name}" of container window to {{{x}, {y}}}' for name, (x, y) in DMG_ICONS)
+    script = f'''tell application "Finder"
+  tell disk "{pathlib.Path(mount).name}"
+    open
+    set current view of container window to icon view
+    set toolbar visible of container window to false
+    set statusbar visible of container window to false
+    set the bounds of container window to {{200, 120, {200 + DMG_WINDOW[0]}, {120 + DMG_WINDOW[1] + 28}}}
+    set opts to the icon view options of container window
+    set arrangement of opts to not arranged
+    set icon size of opts to 120
+    set text size of opts to 13
+    set background picture of opts to file ".background:background.tiff"
+{places}
+    close
+    open
+    update without registering applications
+    delay 2
+    close
+  end tell
+end tell'''
+    try:
+        done = subprocess.run(['osascript', '-e', script], timeout=120).returncode == 0
+    except subprocess.TimeoutExpired:
+        done = False
+    for _ in range(20):                                              # Finder 가 창의 모양(.DS_Store)을 다 쓸 때까지
+        if not done or (pathlib.Path(mount) / '.DS_Store').exists():
+            break
+        time.sleep(0.5)
+    subprocess.run(['sync'])
+    for _ in range(6):
+        if subprocess.run(['hdiutil', 'detach', mount], capture_output=True).returncode == 0:
+            break
+        time.sleep(3)
+    else:
+        subprocess.run(['hdiutil', 'detach', mount, '-force'], capture_output=True)
+    if done:
+        dmg.unlink(missing_ok=True)
+        done = subprocess.run(['hdiutil', 'convert', str(rw), '-format', 'UDZO', '-imagekey', 'zlib-level=9', '-o', str(dmg)]).returncode == 0
+    rw.unlink(missing_ok=True)
+    return done
+
+
+def make_dmg():
+    """dist 의 앱으로 설치 이미지(.dmg)를 만든다."""
+    app = DIST / f'{NAME}.app'
+    dmg = DIST / f'{NAME}-{VERSION}-macos-{platform.machine()}.dmg'
+    stage = WORK / 'dmg'
+    shutil.rmtree(stage, ignore_errors=True)
+    stage.mkdir(parents=True)
+    subprocess.run(['ditto', str(app), str(stage / app.name)], check=True)
+    (stage / 'Applications').symlink_to('/Applications')
+    dmg.unlink(missing_ok=True)
+    try:
+        if styled_dmg(stage, dmg):
+            return dmg
+    except Exception as error:
+        print('창을 꾸민 설치 이미지를 만들지 못했습니다:', type(error).__name__, error)
+    print('바탕 그림 없이 설치 이미지를 만듭니다.')
+    shutil.rmtree(stage / '.background', ignore_errors=True)
+    for attempt in range(5):                                     # 방금 만든 파일을 시스템이 검사하는 동안에는 '리소스 사용 중'으로 실패할 수 있다
+        done = subprocess.run(['hdiutil', 'create', '-volname', NAME, '-srcfolder', str(stage), '-ov', '-format', 'UDZO', str(dmg)])
+        if done.returncode == 0:
+            return dmg
+        time.sleep(8)
+    raise SystemExit('설치 이미지(.dmg)를 만들지 못했습니다.')
+
+
 def build():
     for stream in (sys.stdout, sys.stderr):                          # 글자 인코딩이 한글을 담지 못하는 환경(Windows 의 자동 빌드)에서도 안내문 때문에 멈추지 않게
         stream.reconfigure(errors='replace')
@@ -158,20 +238,7 @@ def build():
         shutil.rmtree(DIST / NAME, ignore_errors=True)               # .app 안에 같은 것이 들어 있다
         app = DIST / f'{NAME}.app'
         subprocess.run(['codesign', '--force', '--deep', '--sign', '-', str(app)], check=True)      # 서명 없는 앱은 Apple Silicon 에서 열리지 않는다(임시 서명)
-        dmg = DIST / f'{NAME}-{VERSION}-macos-{platform.machine()}.dmg'
-        stage = WORK / 'dmg'
-        shutil.rmtree(stage, ignore_errors=True)
-        stage.mkdir(parents=True)
-        subprocess.run(['ditto', str(app), str(stage / app.name)], check=True)
-        (stage / 'Applications').symlink_to('/Applications')
-        dmg.unlink(missing_ok=True)
-        for attempt in range(5):                                     # 방금 만든 파일을 시스템이 검사하는 동안에는 '리소스 사용 중'으로 실패할 수 있다
-            done = subprocess.run(['hdiutil', 'create', '-volname', NAME, '-srcfolder', str(stage), '-ov', '-format', 'UDZO', str(dmg)])
-            if done.returncode == 0:
-                break
-            time.sleep(8)
-        else:
-            raise SystemExit('설치 이미지(.dmg)를 만들지 못했습니다.')
+        dmg = make_dmg()
         print('만든 것:', app, dmg, sep='\n  ')
     elif sys.platform == 'win32':
         folder = DIST / NAME
@@ -189,5 +256,7 @@ def build():
 if __name__ == '__main__':
     if '--icons' in sys.argv:
         make_icons()
+    elif '--dmg' in sys.argv:                                        # 이미 만든 앱으로 설치 이미지만 다시 만든다(macOS)
+        print(make_dmg())
     else:
         build()

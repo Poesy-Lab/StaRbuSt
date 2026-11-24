@@ -24,7 +24,6 @@ DefaultDirName={autopf}\StaRbuSt
 DefaultGroupName=StaRbuSt
 DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
-PrivilegesRequiredOverridesAllowed=dialog
 OutputDir={#OutputDir}
 OutputBaseFilename=StaRbuSt-{#AppVersion}-windows-setup
 SetupIconFile={#IconFile}
@@ -32,6 +31,10 @@ UninstallDisplayIcon={app}\StaRbuSt.exe
 Compression=lzma2
 SolidCompression=yes
 WizardStyle=modern
+; 설치창의 그림과 바탕색(앱의 시작 화면과 같은 연두). 그림은 make_installer_art.py 가 만든다
+WizardImageFile=installer\wizard_large.png
+WizardSmallImageFile=installer\wizard_small.png
+WizardBackColor=#F3F8F1
 ArchitecturesAllowed=x64compatible
 ArchitecturesInstallIn64BitMode=x64compatible
 

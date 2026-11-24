@@ -163,6 +163,6 @@ def test_cstar_and_thrust_coefficient():
 
 def test_fuel_flow_formula():
     """mdot_f = 2 rho_f a L (N pi)^(1-n) mdot_ox^n R^(1-2n)."""
-    a, n, rho_f, L, N, R, mdot = 0.055e-3, 0.48, 935.0, 0.23, 7.0, 7.5e-3, 0.31
+    a, n, rho_f, L, N, R, mdot = 0.0763e-3, 0.42, 935.0, 0.23, 7.0, 7.5e-3, 0.31
     r_dot, mdot_f = chamber.fuel_flow(mdot, R, a, n, rho_f, L, N)
     assert mdot_f == pytest.approx(2 * rho_f * a * L * (N * math.pi) ** (1 - n) * mdot ** n * R ** (1 - 2 * n), rel=1e-12)

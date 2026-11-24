@@ -1140,7 +1140,8 @@ def index(example: str = '', tab: str = 'home', section: str = 'tank'):
                                 stat('인젝터 입구 압력의 오차', f'{s.fit["P_inj_rmse_bar"]:.2f}', 'bar')
 
                             async def apply():
-                                s.cfg.update(calibrate.with_coefficients(s.cfg, s.fit['Cd'], s.fit['phi']))
+                                Cd = None if s.fit['Cd'] is None else round(float(s.fit['Cd']), 3)     # 화면에 보인 자릿수로 넣는다
+                                s.cfg.update(calibrate.with_coefficients(s.cfg, Cd, round(float(s.fit['phi']), 2)))
                                 input_view.refresh()
                                 await calculate()
                             ui.button('입력에 넣고 다시 계산', icon='check', on_click=apply).props('unelevated rounded no-caps color=primary')

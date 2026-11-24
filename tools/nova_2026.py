@@ -19,7 +19,7 @@ import numpy as np
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT))
 import starbust                                                     # noqa: E402
-from starbust import calibrate as cal, config, export, injector, props, testdata as td      # noqa: E402
+from starbust import calibrate as cal, config, export, fuels, injector, props, testdata as td      # noqa: E402
 from starbust._jit import trapezoid                                # noqa: E402
 from starbust.system import oxidizer_flow                          # noqa: E402
 
@@ -207,14 +207,14 @@ def main():
         cfg = cal.with_coefficients(hot_config(hot, 'HEM', m_kg), hem['Cd'], hem['phi'])
         r = starbust.simulate(cfg)
         sens['charge'].append({'label': label, 'm_kg': cfg['tank']['m_kg'], 'fill': fill_fraction(cfg['tank']['m_kg'], cfg['tank']['P_bar']), **hot_metrics(r, hot)})
-    #  5-1b) 후퇴율 계수: 설정값(a = 0.055)은 시험 뒤에 조정한 값이다. 보고서의 값(a = 0.03461)으로 계산한 경우
+    #  5-1b) 후퇴율 식: 예제는 Ito 외 (2021)의 시간적분식이다. 문헌의 다른 식(fuels.py)으로 계산한 경우. 잰 연료 소모량은 0.20 kg
     sens['regression'] = []
-    for label, a in (('설정값 a = 0.055', None), ('보고서의 값 a = 0.03461', 0.03461)):
+    for name, preset in fuels.FUELS['HDPE']['regression'].items():
         cfg = cal.with_coefficients(hot_config(hot), hem['Cd'], hem['phi'])
-        if a:
-            cfg['grain']['a'] = a
+        cfg['grain']['regression'] = name
         r = starbust.simulate(cfg)
-        sens['regression'].append({'label': label, 'a': cfg['grain']['a'], **hot_metrics(r, hot)})
+        sens['regression'].append({'label': f"{name} ({preset['a']}, {preset['n']}" + (f", m {preset['m']})" if preset['m'] else ')'),
+                                   'a': preset['a'], 'n': preset['n'], 'm': preset['m'], **hot_metrics(r, hot)})
     #  5-1c) 특성속도 효율: 계측한 연소실 압력의 적분과 견주면, 충전량마다 그 계측을 설명하는 효율이 정해진다
     sens['cstar_integral'] = {'measured_bar_s': {key: pressure_integral(hot['t'], hot[key]) / 1e5 for key in ('P_c', 'P_c_post')},
                               'eta_assumed': si_hot.eta_cstar,
@@ -260,9 +260,9 @@ def main():
     print('충전량:')
     for row in sens['charge']:
         print(f"  {row['label']:26s} m {row['m_kg']:.3f} kg (충전율 {row['fill']:.2f}): F {pc(row['F_error'])}, Pc {pc(row['P_c_error'])}, P_tank {pc(row['P_tank_error'])}, I {pc(row['impulse_error'])}, 액체 끝 {row['t_liquid_end_s']:.2f} s, 연료 {row['m_fuel_kg']:.3f} kg")
-    print('후퇴율 계수:')
+    print('후퇴율 식:')
     for row in sens['regression']:
-        print(f"  {row['label']:26s}: F {pc(row['F_error'])}, Pc {pc(row['P_c_error'])}, O/F {row['OF']:.2f}, 연료 {row['m_fuel_kg']:.3f} kg")
+        print(f"  {row['label']:34s}: F {pc(row['F_error'])}, Pc {pc(row['P_c_error'])}, I {pc(row['impulse_error'])}, O/F {row['OF']:.2f}, 연료 {row['m_fuel_kg']:.3f} kg")
     ci = sens['cstar_integral']
     print(f"연소실 압력 적분(계측): 프리 {ci['measured_bar_s']['P_c']:.2f}, 포스트 {ci['measured_bar_s']['P_c_post']:.2f} bar s | 충전량별로 이 적분을 설명하는 특성속도 효율: "
           + ', '.join(f"{row['m_kg']:.2f} kg -> {row['eta']:.3f}" for row in ci['eta_implied']))

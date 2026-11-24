@@ -8,6 +8,8 @@
 
 으로 정한다. 두 단계 모두 탱크 압력의 계측값을 입력으로 쓰므로 탱크 모델의 오차나 밸브가 열리는 동안의 과도와 섞이지 않는다.
 토출계수는 유량식과 짝을 이루는 값이어서 유량식마다 따로 구한다.
+
+벤트의 토출계수는 밸브를 닫아 둔 탱크에서 벤트로만 빠지는 구간의 자료로 따로 정한다(fit_vent).
 """
 import math
 
@@ -17,6 +19,7 @@ from . import config, injector, props, testdata
 from ._jit import trapezoid
 from .feedline import mixture
 from .system import oxidizer_flow
+from . import tank
 from .tank import vent_mdot
 
 
@@ -120,3 +123,77 @@ def check(test, cfg, t0, t1):
             'P_inj_bias_bar': float(np.mean(P1 - P_inj) / 1e5),
             'mass_error': float(trapezoid(mdot, t) / drop - 1.0),
             'mdot_mean_test': float(drop / (t1 - t0)), 'mdot_mean_calc': float(trapezoid(mdot, t) / (t1 - t0))}
+
+
+def vent_history(cfg, P0, duration, CdA=None, dt=0.01):
+    """밸브를 닫아 둔 탱크에서 벤트로만 빠질 때의 시각 [s], 탱크 압력 [Pa], 탱크 안의 질량 [kg].
+
+    처음 상태는 압력 P0 의 포화 상태이고 질량은 입력의 충전량이다. 탱크 모델(단열, 평형)을 Explicit Euler 로 적분한다.
+    """
+    s = config.to_si(cfg)
+    CdA = s.vent_CdA if CdA is None else CdA
+    m, U = tank.initial_state(s.V, s.m0, props.sat(P0)[0])
+    n = max(int(round(duration / dt)), 1)
+    t, P, mass = np.arange(n + 1) * dt, np.empty(n + 1), np.empty(n + 1)
+    for i in range(n + 1):
+        P[i], mass[i] = tank.tank_state(m, U, s.V)[0], m
+        mdot = vent_mdot(P[i], CdA, s.Pa)
+        m -= mdot * dt
+        U -= mdot * props.sat(P[i])[4] * dt                          # 벤트로는 포화 증기가 나간다
+    return t, P, mass
+
+
+def fit_vent(test, cfg, t0, t1):
+    """벤트의 토출계수. 밸브를 닫아 둔 탱크에서 벤트로만 빠지는 구간 [t0, t1] 의 자료로 정한다.
+
+    자료에 있는 채널에 따라 방법이 다르다(돌려주는 'method').
+      'mass'      탱크 질량과 탱크 압력이 있다: 질량 감소량 = Cd A ∫ g(P) dt 에서 바로 구한다(g 는 토출계수와 면적을 뺀 벤트 유량식).
+                  탱크 모델과 충전량을 쓰지 않는다.
+      'mass_only' 탱크 질량만 있다: 입력의 초기 온도와 충전량으로 탱크를 계산해 질량 감소량이 같아지는 값을 찾는다.
+      'pressure'  탱크 압력만 있다: 계측한 처음 압력과 입력의 충전량으로 탱크를 계산해 압력 강하가 같아지는 값을 찾는다.
+                  충전량에 따라 값이 달라지고, 탱크 벽에서 들어오는 열을 무시하므로 긴 구간에서는 작게 나온다.
+    """
+    s = config.to_si(cfg)
+    vent = cfg.get('vent') or {}
+    if not vent.get('d_mm'):
+        raise ValueError('벤트 지름을 먼저 입력하세요.')
+    if t1 - t0 < 0.5:
+        raise ValueError('구간이 너무 짧습니다(0.5 s 이상).')
+    area = math.pi * (vent['d_mm'] * 1e-3) ** 2 / 4.0
+    has_m, has_P = 'm' in test, 'P_tank' in test
+    if not (has_m or has_P):
+        raise ValueError('시험 파일에 탱크 압력(P_tank_bar)이나 탱크 질량(m_kg) 열이 있어야 합니다.')
+    half = min(0.1, (t1 - t0) / 10.0)
+    out = {}
+    if has_m:
+        out['drop_kg'] = mass_drop(test, t0, t1, half)
+        if out['drop_kg'] <= 0.0:
+            raise ValueError('이 구간에서는 탱크 질량이 줄지 않았습니다. 구간이나 자료를 확인하세요.')
+    if has_P:
+        P_start = testdata.mean_between(test, 'P_tank', t0 - half, t0 + half)
+        out['drop_bar'] = (P_start - testdata.mean_between(test, 'P_tank', t1 - half, t1 + half)) / 1e5
+    if has_m and has_P:
+        n = max(int(round(0.1 / np.median(np.diff(test['t'])))), 1)
+        t = np.arange(t0, t1 + 1e-9, 0.02)
+        P = np.interp(t, test['t'], testdata.smooth(test['P_tank'], n))
+        ideal = trapezoid(np.array([vent_mdot(p, area, s.Pa) for p in P]), t)       # 토출계수가 1 일 때 빠지는 질량
+        return {**out, 'Cd': float(out['drop_kg'] / ideal), 'method': 'mass', 'mdot': out['drop_kg'] / (t1 - t0)}
+    if has_m:
+        P_start, target, pick = props.psat(s.T0), out['drop_kg'], lambda P, mass: mass[0] - mass[-1]
+    else:
+        if out['drop_bar'] <= 0.0:
+            raise ValueError('이 구간에서는 탱크 압력이 내려가지 않았습니다. 구간이나 자료를 확인하세요.')
+        target, pick = out['drop_bar'] * 1e5, lambda P, mass: P[0] - P[-1]
+    lo, hi = 1e-3, 2.0
+    if pick(*vent_history(cfg, P_start, t1 - t0, hi * area)[1:]) < target:
+        raise ValueError('토출계수를 2 로 두어도 계측한 변화보다 작게 계산됩니다. 벤트 지름과 충전량, 구간을 확인하세요.')
+    for _ in range(40):                                                 # 토출계수가 클수록 변화가 크다(단조) → 이분법
+        mid = 0.5 * (lo + hi)
+        if pick(*vent_history(cfg, P_start, t1 - t0, mid * area)[1:]) < target:
+            lo = mid
+        else:
+            hi = mid
+    Cd = 0.5 * (lo + hi)
+    mass = vent_history(cfg, P_start, t1 - t0, Cd * area)[2]
+    return {**out, 'Cd': Cd, 'method': 'mass_only' if has_m else 'pressure', 'mdot': float(mass[0] - mass[-1]) / (t1 - t0)}
+

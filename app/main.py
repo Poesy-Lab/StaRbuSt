@@ -248,6 +248,10 @@ LOSS_TABLE = (
 )
 CHANNEL_NAME = {'P_tank': '탱크 압력(P_tank_bar)', 'P_inj': '인젝터 입구 압력(P_inj_bar)', 'm': '탱크 질량(m_kg)',
                 'P_c': '연소실 압력(P_c_bar)', 'F': '추력(F_N)'}
+VENT_TEMPLATE = ('t_s,P_tank_bar,m_kg\n0.00,45.78,1.000\n0.50,45.40,0.996\n1.00,45.02,0.992\n1.50,44.65,0.988\n2.00,44.28,0.984\n')     # 벤트 시험 자료의 양식. 압력과 질량 가운데 없는 열은 지운다
+VENT_METHOD = {'mass': '탱크 질량의 감소량과 계측한 탱크 압력에서 구했습니다.',
+               'mass_only': '탱크 질량의 감소량에서 구했습니다. 탱크 압력은 입력한 초기 온도와 충전량으로 계산했습니다.',
+               'pressure': '탱크 압력의 강하량에서 구했습니다. 입력한 충전량에 따라 값이 달라지고, 탱크 벽에서 들어오는 열을 무시하므로 구간이 길면 작게 나옵니다.'}
 TEMPLATE = {       # 시험 자료 파일의 양식(첫 줄은 열 이름, 그 아래는 숫자). 값은 보기로 넣은 것이고, 계측하지 않은 열은 지우고 쓴다
     'cold_flow': 't_s,P_tank_bar,P_inj_bar,m_kg\n-0.02,35.81,1.01,1.114\n-0.01,35.81,1.01,1.114\n0.00,35.80,3.20,1.114\n0.01,35.78,9.80,1.112\n0.02,35.75,15.40,1.109\n',
     'hot_fire': 't_s,P_tank_bar,P_inj_bar,P_c_bar,F_N,m_kg\n-0.02,45.78,1.01,1.01,0.0,1.000\n-0.01,45.78,1.01,1.01,0.0,1.000\n0.00,45.77,2.10,1.60,105.0,1.000\n'
@@ -338,6 +342,9 @@ class Session:
         self.picked = None              # 고른 계산 모드. 시작 화면에서는 None 이고 화면이 연두색이다
         self.window = {'t0': 0.5, 't1': 2.0}
         self.fit = None
+        self.vent_test = None           # 벤트 토출계수를 정할 때 올린 시험 자료, 구간, 결과
+        self.vent_window = {'t0': 0.0, 't1': 10.0}
+        self.vent_fit = None
         self.section = 'tank'
         self.tab = 'home'
         self.chart = 'pressure'
@@ -610,8 +617,65 @@ def index(example: str = '', tab: str = 'home', section: str = 'tank'):
         def toggle(e):
             s.cfg['vent'] = {'d_mm': 1.5875, 'Cd': 0.1} if e.value else None
             vent_fields.refresh()
+            vent_tool.refresh()
         vent_on.on_value_change(toggle)
         vent_fields()
+
+        # 밸브를 닫아 둔 탱크의 자료로 벤트의 토출계수를 정한다
+        @ui.refreshable
+        def vent_tool():
+            if not s.cfg.get('vent'):
+                return
+
+            async def opened(e):
+                try:
+                    test = testdata.from_text((await e.file.text()).lstrip('\ufeff'))
+                    if 'm' not in test and 'P_tank' not in test:
+                        raise ValueError('탱크 압력(P_tank_bar)이나 탱크 질량(m_kg) 열이 있어야 합니다.')
+                except Exception as error:
+                    ui.notify(f'시험 파일을 읽지 못했습니다: {error}', type='negative', multi_line=True)
+                    return
+                s.vent_test, s.vent_fit = test, None
+                s.vent_window = {'t0': round(float(test['t'][0]) + 0.2, 2), 't1': round(float(test['t'][-1]) - 0.2, 2)}
+                vent_tool.refresh()
+
+            async def fit_now():
+                try:
+                    s.vent_fit = await run.io_bound(calibrate.fit_vent, s.vent_test, copy.deepcopy(s.cfg), s.vent_window['t0'], s.vent_window['t1'])
+                except Exception as error:
+                    s.vent_fit = None
+                    ui.notify(str(error), type='negative', multi_line=True)
+                vent_tool.refresh()
+
+            def apply():
+                s.cfg['vent']['Cd'] = round(s.vent_fit['Cd'], 3)
+                vent_fields.refresh()
+                ui.notify(f'벤트 토출계수를 {s.cfg["vent"]["Cd"]:g}로 바꿨습니다.', type='positive')
+            with ui.expansion('시험으로 벤트 토출계수 정하기', icon='science', value=s.vent_test is not None).classes('w-full'):
+                ui.label('밸브를 닫아 둔 채 벤트로만 N₂O가 빠지는 구간을 계측한 자료로 벤트의 토출계수를 정합니다. '
+                         '탱크 질량(로드셀)과 탱크 압력 가운데 하나만 있어도 됩니다. 벤트 지름과 탱크 치수, 충전량은 위에 입력한 값을 씁니다.').classes('hint')
+                picker = ui.upload(on_upload=opened, auto_upload=True).props('accept=.csv').classes('hidden')
+                with ui.row().classes('items-center gap-3'):
+                    ui.button('시험 파일(CSV) 열기', icon='folder_open', on_click=lambda: picker.run_method('pickFiles')).props('outline rounded no-caps color=primary')
+                    ui.button('양식 받기', icon='description', on_click=lambda: save_as('starbust_vent_template.csv', VENT_TEMPLATE, 'csv')).props('flat rounded no-caps color=primary')
+                if s.vent_test is not None:
+                    have = [CHANNEL_NAME[k] for k in ('P_tank', 'm') if k in s.vent_test]
+                    ui.label(f'불러온 자료: {", ".join(have)}, {s.vent_test["t"][0]:.1f} ~ {s.vent_test["t"][-1]:.1f} s').classes('hint')
+                    with ui.row().classes('items-center gap-4'):
+                        number('구간 시작', s.vent_window, 't0', 's', step=0.5, width='w-32')
+                        number('구간 끝', s.vent_window, 't1', 's', step=0.5, width='w-32')
+                        ui.button('토출계수 정하기', icon='auto_fix_high', color=None, on_click=fit_now).props('unelevated rounded no-caps').classes('cta')
+                    if s.vent_fit:
+                        with ui.row().classes('w-full gap-4'):
+                            stat('벤트 토출계수', f'{s.vent_fit["Cd"]:.3f}', symbol='Cd_vent')
+                            stat('평균 벤트 유량', f'{s.vent_fit["mdot"] * 1e3:.1f}', 'g/s')
+                            if 'drop_kg' in s.vent_fit:
+                                stat('질량 감소량', f'{s.vent_fit["drop_kg"] * 1e3:.0f}', 'g')
+                            if 'drop_bar' in s.vent_fit:
+                                stat('압력 강하량', f'{s.vent_fit["drop_bar"]:.2f}', 'bar')
+                        ui.label(VENT_METHOD[s.vent_fit['method']]).classes('hint')
+                        ui.button('입력에 넣기', icon='check', on_click=apply).props('unelevated rounded no-caps color=primary')
+        vent_tool()
 
     def line_form():
         line = s.cfg['feedline']

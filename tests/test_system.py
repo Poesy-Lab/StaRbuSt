@@ -196,3 +196,22 @@ def test_update_version_and_notes():
     spec.loader.exec_module(module)
     assert module.notes(starbust.__version__)                       # 지금 버전의 패치 노트가 CHANGELOG.md 에 있어야 한다
     assert module.notes('9.9.9', '## 9.9.9 (날짜)\n\n- 가\n\n## 9.9.8\n\n- 나\n') == '- 가'
+
+
+def test_vent_coefficient_from_closed_valve_test():
+    """밸브를 닫아 둔 탱크의 자료에서 벤트 토출계수를 되찾는다(질량과 압력, 질량만, 압력만)."""
+    from starbust import calibrate
+    cfg = starbust.load(EXAMPLES / 'nova_hot_fire.json')
+    cfg['vent'] = {'d_mm': 1.5875, 'Cd': 0.27}
+    P0 = props.psat(cfg['tank']['T_C'] + 273.15)
+    t, P, mass = calibrate.vent_history(cfg, P0, 12.0)
+    assert 0.02 < mass[0] - mass[-1] < 0.5 and P[-1] < P[0]              # 12 초에 수십 g 이 빠지고 압력이 내려간다
+    full = {'t': t, 'P_tank': P, 'm': mass}
+    guess = dict(cfg, vent={'d_mm': 1.5875, 'Cd': 0.1})                     # 처음에 적어 둔 값은 결과에 영향을 주지 않는다
+    for test, method in ((full, 'mass'), ({'t': t, 'm': mass}, 'mass_only'), ({'t': t, 'P_tank': P}, 'pressure')):
+        fit = calibrate.fit_vent(test, guess, 1.0, 11.0)
+        assert fit['method'] == method
+        assert fit['Cd'] == pytest.approx(0.27, rel=0.05 if method == 'mass_only' else 0.02)       # 질량만 있을 때는 입력의 초기 온도에서 시작하므로 어림이 거칠다
+    with pytest.raises(ValueError):
+        calibrate.fit_vent({'t': t, 'F': P}, guess, 1.0, 11.0)
+

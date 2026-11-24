@@ -9,7 +9,7 @@ if not exist packaging\build\venv (
 )
 call packaging\build\venv\Scripts\activate.bat
 python -m pip install --upgrade pip || goto :error
-python -m pip install pyinstaller numpy numba plotly nicegui pywebview || goto :error
+python -m pip install pyinstaller numpy numba plotly nicegui pywebview certifi || goto :error
 python packaging\build.py || goto :error
 echo.
 echo Done. See the packaging\dist folder.

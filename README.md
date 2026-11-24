@@ -43,7 +43,7 @@ Python 없이 쓰려면 설치 파일로 설치한다. 설치 파일은 저장�
 설치 파일은 `packaging/build.py`로 만든다. 실행하는 컴퓨터의 운영체제용 파일이 생성된다.
 
 ```bash
-pip install pyinstaller numpy numba plotly nicegui pywebview
+pip install pyinstaller numpy numba plotly nicegui pywebview certifi
 python packaging/build.py
 ```
 

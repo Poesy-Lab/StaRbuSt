@@ -4,7 +4,7 @@
     python packaging/build.py            앱을 만든다
     python packaging/build.py --icons    아이콘 파일(packaging/icons)만 다시 만든다(macOS, rsvg-convert 와 ImageMagick 필요)
 
-필요한 것:  pip install pyinstaller numpy numba plotly nicegui pywebview
+필요한 것:  pip install pyinstaller numpy numba plotly nicegui pywebview certifi
 나오는 것(packaging/dist):
     macOS     StaRbuSt.app 과 StaRbuSt-<버전>-macos-<arm64|x86_64>.dmg (열어서 앱을 응용 프로그램 폴더로 끌어다 놓는다)
     Windows   StaRbuSt 폴더(StaRbuSt.exe). Inno Setup(iscc)이 있으면 설치 파일 StaRbuSt-<버전>-windows-setup.exe 도 만든다

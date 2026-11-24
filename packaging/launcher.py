@@ -25,7 +25,10 @@ try:
     import webview                  # noqa: F401
 except Exception:                   # pywebview 없이 만든 앱은 브라우저의 앱 창으로 연다
     pass
-import certifi                      # noqa: F401, E402  (새 버전을 확인할 때 쓰는 인증서 묶음)
+try:
+    import certifi                  # noqa: F401  (새 버전을 확인할 때 쓰는 인증서 묶음)
+except Exception:                   # 없으면 시스템의 인증서로 확인한다
+    pass
 
 
 def main():

@@ -190,7 +190,7 @@ def fit_vent(test, cfg, t0, t1):
         target, pick = out['drop_bar'] * 1e5, lambda P, mass: P[0] - P[-1]
     lo, hi = 1e-3, 2.0
     if pick(*vent_history(cfg, P_start, t1 - t0, hi * area)[1:]) < target:
-        raise ValueError('토출계수를 2 로 두어도 계측한 변화보다 작게 계산됩니다. 벤트 지름과 충전량, 구간을 확인하세요.')
+        raise ValueError('토출계수를 2 로 두어도 계산한 변화량이 계측값보다 작습니다. 벤트 지름과 충전량, 구간을 확인하세요.')
     for _ in range(40):                                                 # 토출계수가 클수록 변화가 크다(단조) → 이분법
         mid = 0.5 * (lo + hi)
         if pick(*vent_history(cfg, P_start, t1 - t0, mid * area)[1:]) < target:

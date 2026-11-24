@@ -6,6 +6,11 @@ name: build-app
 
 on:
   workflow_dispatch:
+    inputs:
+      windows_debug:
+        description: Windows 만, 콘솔 창이 있는 실행 파일로 만들어 오류를 기록에 남긴다
+        type: boolean
+        default: false
   push:
     tags: ['v*']
 
@@ -14,12 +19,13 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-15, macos-15-intel, windows-latest]
+        os: ${{ fromJSON(inputs.windows_debug && '["windows-latest"]' || '["macos-15", "macos-15-intel", "windows-latest"]') }}
     runs-on: ${{ matrix.os }}
     # Intel Mac 용이 실패해도 나머지 설치 파일은 나오게 한다.
     continue-on-error: ${{ matrix.os == 'macos-15-intel' }}
     env:
       PYTHONUTF8: '1'
+      STARBUST_DEBUG_CONSOLE: ${{ inputs.windows_debug && '1' || '' }}
     steps:
       - uses: actions/checkout@v6
       - uses: actions/setup-python@v6

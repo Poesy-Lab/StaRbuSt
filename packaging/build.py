@@ -90,7 +90,7 @@ a = Analysis([{str(HERE / 'launcher.py')!r}], pathex=[], binaries=[],
              datas={datas!r} + collect_data_files('plotly'),
              hiddenimports={source_imports()!r}, excludes={list(EXCLUDE)!r}, noarchive=False)
 pyz = PYZ(a.pure)
-exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name={NAME!r}, console=False, icon={str(icon)!r},
+exe = EXE(pyz, a.scripts, [], exclude_binaries=True, name={NAME!r}, console={bool(os.environ.get('STARBUST_DEBUG_CONSOLE'))}, icon={str(icon)!r},
           version={str(WORK / 'version_info.txt')!r} if {sys.platform == 'win32'} else None)
 coll = COLLECT(exe, a.binaries, a.datas, name={NAME!r})
 app = BUNDLE(coll, name={NAME + '.app'!r}, icon={str(icon)!r}, bundle_identifier={BUNDLE_ID!r}, version={VERSION!r},
@@ -125,7 +125,12 @@ def selftest():
     exe = DIST / NAME / (f'{NAME}.exe' if sys.platform == 'win32' else NAME)
     report = WORK / 'selftest.txt'
     report.unlink(missing_ok=True)
-    subprocess.run([str(exe), '--selftest', str(report)], check=False, timeout=600)
+    try:
+        subprocess.run([str(exe), '--selftest', str(report)], check=False, timeout=240)
+    except subprocess.TimeoutExpired:                                # 창 없는 실행 파일이 오류 창을 띄우고 멈춘 경우 등
+        print('만든 앱이 4분 안에 끝나지 않았습니다.')
+        if sys.platform == 'win32':
+            subprocess.run(['taskkill', '/F', '/T', '/IM', exe.name], check=False)
     text = report.read_text(encoding='utf-8') if report.exists() else '결과 파일이 없습니다'
     print('만든 앱의 계산 확인:', text)
     if not text.startswith('ok numba=True'):

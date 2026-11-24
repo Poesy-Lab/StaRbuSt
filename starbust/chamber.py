@@ -2,7 +2,7 @@
 
 가정: 연소실 내부 상태 균일(0차원), 준정상 상태, 연소 생성물은 화학 평형, 노즐 목은 초킹.
 
-    후퇴율        r_dot = a G_ox^n,   G_ox = mdot_ox / (N pi R^2)
+    후퇴율        r_dot = a G_ox^n (Pc / 1 MPa)^m,   G_ox = mdot_ox / (N pi R^2)    (압력 항이 없는 식은 m = 0)
     연료 유량      mdot_f = rho_f r_dot N (2 pi R L)
     연소실 압력     Pc = eta_cstar c*(O/F, Pc) (mdot_ox + mdot_f) / At
 
@@ -99,6 +99,7 @@ def fuel_flow(mdot_ox, R, a, n, rho_f, L, N):
     """포트 반지름 R [m] 에서의 후퇴율 r_dot [m/s] 과 연료 유량 mdot_f [kg/s].
 
     a 는 r_dot [m/s] = a G_ox^n (G_ox [kg/(m2 s)]) 가 되도록 맞춘 값이다(입력 파일의 a 는 mm/s 기준이라 1e-3 을 곱해 넘긴다).
+    압력 항이 있는 식은 부르는 쪽에서 a 에 (Pc / 1 MPa)^m 을 곱해 넘긴다(system.chamber_balance).
     """
     if mdot_ox <= 0.0:
         return 0.0, 0.0

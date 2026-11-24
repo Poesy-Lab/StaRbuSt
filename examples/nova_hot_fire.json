@@ -62,6 +62,7 @@
     "R0_mm": 7.5,
     "L_mm": 230,
     "N": 7,
+    "regression": "custom",
     "a": 0.055,
     "n": 0.48,
     "rho_kg_m3": 935

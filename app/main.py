@@ -22,7 +22,7 @@ import plotly.graph_objects as go                                   # noqa: E402
 from nicegui import app, run, ui                                    # noqa: E402
 
 import starbust                                                     # noqa: E402
-from starbust import calibrate, export, feedline, props, testdata   # noqa: E402
+from starbust import calibrate, export, feedline, fuels, props, testdata   # noqa: E402
 
 sys.path.insert(0, str(pathlib.Path(__file__).parent))
 import desktop                                                      # noqa: E402
@@ -230,7 +230,7 @@ KEY_EQUATIONS = {
     'tank': (('tank_mass', '질량 보존', ''), ('tank_energy', '에너지 보존', '탱크 안은 포화 상태')),
     'line': (('line_momentum', '운동량 방정식', '호스, 관'), ('line_loss', '부차적 손실', '손실 요소, 밸브')),
     'injector': (('inj_flow', '산화제 유량', ''),),
-    'chamber': (('grain_regression', '후퇴율', 'mm/s, kg/(m²·s)'), ('chamber_pressure', '연소실 압력', '')),
+    'chamber': ((('grain_regression', 'grain_flux'), '후퇴율', 'mm/s, kg/(m²·s), MPa'), ('chamber_pressure', '연소실 압력', '')),
     'nozzle': (('nozzle_thrust', '추력', ''), ('nozzle_geometry', '팽창비와 발산 보정', '')),
     'settings': (('euler', '시간 적분', 'Explicit Euler'),),
 }
@@ -353,14 +353,14 @@ class Session:
         self.vent_test = None           # 벤트 토출계수를 정할 때 올린 시험 자료, 구간, 결과
         self.vent_window = {'t0': 0.0, 't1': 10.0}
         self.vent_fit = None
-        self.hot_masses = {'fuel': None, 'ox': None}    # 연소시험으로 계수를 정할 때 적는 연료와 산화제의 소모량 [kg], 결과
+        self.hot_masses = {'fuel': None, 'ox': None}    # 연소시험으로 특성속도 효율을 정할 때 적는 연료와 산화제의 소모량 [kg], 결과
         self.hot_fit = None
         self.section = 'tank'
         self.tab = 'home'
         self.chart = 'pressure'
 
     def reset_hot_fit(self):
-        """연소시험으로 계수를 정하는 칸을 시험 자료에 적힌 질량(있으면)으로 채운다. 산화제는 기록이 없으면 충전량으로 둔다."""
+        """연소시험으로 특성속도 효율을 정하는 칸을 시험 자료에 적힌 질량(있으면)으로 채운다. 산화제는 기록이 없으면 충전량으로 둔다."""
         record = ((self.test or {}).get('meta') or {}).get('propellant') or {}
         self.hot_masses = {'fuel': record.get('fuel_consumed_kg'), 'ox': record.get('oxidizer_consumed_kg', self.cfg['tank'].get('m_kg'))}
         self.hot_fit = None
@@ -836,11 +836,42 @@ def index(example: str = '', tab: str = 'home', section: str = 'tank'):
             field('포트 초기 반지름', 'R0', grain, 'R0_mm', 'mm', width='w-36')
             field('그레인 길이', 'L', grain, 'L_mm', 'mm', width='w-36')
             field('포트 수', 'N', grain, 'N', width='w-36')
+        presets = fuels.FUELS[grain['fuel']]['regression']
+
+        def pick_fuel(e):
+            """연료를 바꾸면 밀도를 그 연료의 값으로 두고, 후퇴율 식은 그 연료의 첫째 식으로 둔다."""
+            grain.update(fuel=e.value, rho_kg_m3=fuels.FUELS[e.value]['rho_kg_m3'], regression=next(iter(fuels.FUELS[e.value]['regression'])))
+            fuels.resolve(grain)
+            input_view.refresh()
+
+        def pick_regression(e):
+            grain['regression'] = e.value
+            fuels.resolve(grain)                                      # 문헌 식을 고르면 그 식의 a, n, m 이 들어간다
+            coefficients.refresh()
         with ui.row().classes('gap-4 q-mt-sm'):
-            field('후퇴율 계수', 'a', grain, 'a', step=0.001, width='w-36')
-            field('후퇴율 지수', 'n', grain, 'n', step=0.01, width='w-36')
+            with ui.column().classes('gap-1 w-56'):
+                ui.html('<div class="flabel"><span>연료</span></div>', sanitize=False)
+                ui.select({k: v['label'] for k, v in fuels.FUELS.items()}, value=grain['fuel'], on_change=pick_fuel).props('outlined dense').classes('w-full')
+            with ui.column().classes('gap-1 w-72'):
+                ui.html('<div class="flabel"><span>후퇴율 식</span></div>', sanitize=False)
+                ui.select({**{k: v['label'] for k, v in presets.items()}, fuels.CUSTOM: '직접 입력'}, value=grain['regression'],
+                          on_change=pick_regression).props('outlined dense').classes('w-full')
+
+        @ui.refreshable
+        def coefficients():
+            custom = grain['regression'] == fuels.CUSTOM
+            with ui.row().classes('gap-4 q-mt-sm'):
+                boxes = [field('후퇴율 계수', 'a', grain, 'a', step=0.001, width='w-36'), field('후퇴율 지수', 'n', grain, 'n', step=0.01, width='w-36')]
+                if custom or grain['m']:
+                    boxes.append(field('압력 지수', 'm', grain, 'm', step=0.01, width='w-36'))
+                if not custom:                                        # 문헌 식의 값은 고치지 못하게 둔다
+                    for box in boxes:
+                        box.props('readonly').style('opacity: .72')
+            note = ('계수를 직접 적습니다. 압력 항을 쓰지 않으면 압력 지수를 0 으로 둡니다.' if custom else presets[grain['regression']]['note'])
+            ui.label(note).classes('hint')
+        coefficients()
+        with ui.row().classes('gap-4 q-mt-sm'):
             field('특성속도 효율', 'eta_cstar', chamber, 'eta_cstar', step=0.01, width='w-36')
-        ui.label('연료는 HDPE, 산화제는 N₂O 로 계산합니다.').classes('hint q-mt-sm')
 
     def nozzle_form():
         nozzle = s.cfg['nozzle']
@@ -872,7 +903,8 @@ def index(example: str = '', tab: str = 'home', section: str = 'tank'):
             for key, name, note in cards:
                 with ui.element('div').classes('eqcard'):
                     ui.html(f'<div class="name">{name}<small>{note}</small></div>', sanitize=False)
-                    ui.html(equation(key), sanitize=False).classes('eq')
+                    for one in key if isinstance(key, tuple) else (key,):       # 식이 둘인 카드는 줄을 나눠 적는다
+                        ui.html(equation(one), sanitize=False).classes('eq')
             if s.section == 'tank':                                   # 벤트 유량식과, 시험으로 정한 토출계수를 볼 때의 주의
                 with ui.element('div').classes('eqcard'):
                     ui.html('<div class="name">벤트 유량<small>포화 증기, 초킹</small></div>', sanitize=False)
@@ -1132,71 +1164,65 @@ def index(example: str = '', tab: str = 'home', section: str = 'tank'):
                 hot_fire_fit()
 
     def hot_fire_fit():
-        """연소시험으로 후퇴율 계수와 특성속도 효율을 정하는 카드. 공급라인과 인젝터의 계수는 분사시험에서 정하므로 여기에는 없다."""
+        """연소시험으로 특성속도 효율을 정하는 카드. 후퇴율 식은 입력에서 고른 것을 쓰고, 공급라인과 인젝터의 계수는 분사시험에서 정하므로 여기에는 없다."""
         with ui.column().classes('card gap-3'):
-            heading('이 시험으로 계수 정하기', 'input')
-            ui.label('후퇴율 계수는 계산한 연료 소모량이 잰 값과 같아지게 정하고, 특성속도 효율은 계측한 연소실 압력의 적분과 소모한 추진제 질량에서 구합니다. '
-                     '공급라인과 인젝터의 계수는 분사시험에서 정한 값을 그대로 둡니다.').classes('hint')
+            heading('이 시험으로 특성속도 효율 정하기', 'input')
             if 'P_c' not in s.test:
-                ui.label(f'이 시험 자료에는 연소실 압력(P_c_bar)이 없어 후퇴율 계수만 정합니다. '
-                         f'특성속도 효율은 입력에 적힌 값({s.cfg["chamber"]["eta_cstar"]:g})을 그대로 둡니다.').classes('hint').style('color: #B45309')
-            record = (s.test.get('meta') or {}).get('propellant') or {}
-            if 'fuel_before_kg' in record and 'fuel_after_kg' in record:
-                ui.label(f'시험 기록에 적힌 값을 넣어 두었습니다. 그레인은 연소 전 {record["fuel_before_kg"]:.2f} kg, 연소 후 {record["fuel_after_kg"]:.2f} kg 이고 '
-                         f'산화제는 {record.get("oxidizer_consumed_kg", s.cfg["tank"]["m_kg"]):.2f} kg 입니다.').classes('hint')
+                ui.label('이 시험 자료에는 연소실 압력(P_c_bar)이 없어 특성속도 효율을 정할 수 없습니다.').classes('hint')
+                return
+            ui.label('계측한 연소실 압력의 적분과 소모한 추진제 질량에서 특성속도 효율을 구합니다. '
+                     '후퇴율 식은 입력에서 고른 것을, 공급라인과 인젝터의 계수는 분사시험에서 정한 값을 그대로 씁니다.').classes('hint')
 
             @ui.refreshable
             def fitted():
                 fit = s.hot_fit
                 if not fit:
                     return
-                usable = fit['eta'] is not None and 0.0 < fit['eta'] <= 1.0
+                usable = 0.0 < fit['eta'] <= 1.0
                 with ui.row().classes('w-full gap-4'):
-                    stat('후퇴율 계수', f'{fit["a"]:.4f}', symbol='a')
-                    if fit['eta'] is not None:
-                        stat('특성속도 효율', f'{fit["eta"]:.2f}', symbol='eta_cstar')
-                        stat('계측에서 구한 특성속도', f'{fit["cstar_measured"]:.0f}', 'm/s')
-                        stat('이론 특성속도', f'{fit["cstar_theory"]:.0f}', 'm/s', 'cstar')
-                        stat('전체 혼합비', f'{fit["OF"]:.2f}')
-                notes = [f'후퇴율 지수는 입력값({fit["n"]:g}) 그대로: 시험 한 번의 연료 소모량으로는 계수와 지수를 따로 정할 수 없음']
-                if fit['eta'] is not None:
-                    total = fit['ox_kg'] + fit['fuel_kg']
-                    notes += [f'계측에서 구한 특성속도 = 압력 적분 {fit["integral_bar_s"]:.1f} bar·s({fit["t0"]:.2f} ~ {fit["t1"]:.2f} s) × 노즐 목 면적 {fit["At"] * 1e4:.2f} cm² '
-                              f'÷ 추진제 질량 {total:.2f} kg. 효율은 이 값을 전체 혼합비에서의 이론 특성속도로 나눈 값',
-                              f'정한 계수로 계산하면 같은 구간에 연소실로 들어간 산화제는 {fit["ox_calc_kg"]:.2f} kg: 벤트로 나간 양과 탱크에 남은 증기는 연소실을 지나지 않으므로, '
-                              '산화제 소모량에 충전량을 그대로 적으면 효율이 그만큼 작게 나옴',
-                              '효율을 넣은 뒤에도 구간 평균 압력이 계측값과 다른 경우: 산화제가 흘러나간 시간이 계산과 다른 것이므로 액체 고갈 시각을 함께 비교']
+                    stat('특성속도 효율', f'{fit["eta"]:.2f}', symbol='eta_cstar')
+                    stat('계측에서 구한 특성속도', f'{fit["cstar_measured"]:.0f}', 'm/s')
+                    stat('이론 특성속도', f'{fit["cstar_theory"]:.0f}', 'm/s', 'cstar')
+                    stat('전체 혼합비', f'{fit["OF"]:.2f}')
+                total = fit['ox_kg'] + fit['fuel_kg']
+                fuel = (f'고른 후퇴율 식으로 계산한 연료 소모량은 {fit["fuel_calc_kg"]:.3f} kg(잰 값 {fit["fuel_kg"]:.3f} kg)' if fit['fuel_measured'] else
+                        f'연료 소모량은 고른 후퇴율 식으로 계산한 값 {fit["fuel_kg"]:.3f} kg 을 씀')
+                notes = [f'계측에서 구한 특성속도 = 압력 적분 {fit["integral_bar_s"]:.1f} bar·s({fit["t0"]:.2f} ~ {fit["t1"]:.2f} s) × 노즐 목 면적 {fit["At"] * 1e4:.2f} cm² '
+                         f'÷ 추진제 질량 {total:.2f} kg. 효율은 이 값을 전체 혼합비에서의 이론 특성속도로 나눈 값',
+                         fuel,
+                         f'정한 효율로 계산하면 같은 구간에 연소실로 들어간 산화제는 {fit["ox_calc_kg"]:.2f} kg: 벤트로 나간 양과 탱크에 남은 증기는 연소실을 지나지 않으므로, '
+                         '산화제 소모량에 충전량을 그대로 적으면 효율이 그만큼 작게 나옴',
+                         '효율을 넣은 뒤에도 구간 평균 압력이 계측값과 다른 경우: 산화제가 흘러나간 시간이 계산과 다른 것이므로 액체 고갈 시각을 함께 비교']
                 ui.html('<div class="caution"><b>결과를 볼 때</b><ul>' + ''.join(f'<li>{t}</li>' for t in notes) + '</ul></div>', sanitize=False)
-                if fit['eta'] is not None and not usable:
+                if not usable:
                     ui.label('효율이 1 보다 크게 나왔습니다. 산화제나 연료의 소모량이 실제보다 작게 적혔거나 연소실 압력의 영점이 맞지 않을 수 있습니다. '
                              '이 값은 입력에 넣지 않습니다.').classes('hint').style('color: #B45309; font-weight: 600')
+                    return
 
                 async def apply():
-                    s.cfg['grain']['a'] = round(fit['a'], 4)
-                    if usable:
-                        s.cfg['chamber']['eta_cstar'] = round(fit['eta'], 3)
+                    s.cfg['chamber']['eta_cstar'] = round(fit['eta'], 3)
                     input_view.refresh()
                     await calculate()
-                ui.button('입력에 넣고 다시 계산' if usable else '후퇴율 계수만 입력에 넣고 다시 계산', icon='check', on_click=apply).props('unelevated rounded no-caps color=primary')
+                ui.button('입력에 넣고 다시 계산', icon='check', on_click=apply).props('unelevated rounded no-caps color=primary')
 
             async def fit_now():
-                fuel, ox = s.hot_masses.get('fuel'), s.hot_masses.get('ox')
-                if not fuel or fuel <= 0:
-                    ui.notify('연료 소모량을 적으세요.', type='warning')
+                ox, fuel = s.hot_masses.get('ox'), s.hot_masses.get('fuel')
+                if not ox or ox <= 0:
+                    ui.notify('산화제 소모량을 적으세요.', type='warning')
                     return
-                note = ui.notification('계수를 찾는 중입니다', spinner=True, timeout=None)
+                note = ui.notification('효율을 구하는 중입니다', spinner=True, timeout=None)
                 try:
-                    s.hot_fit = await run.io_bound(calibrate.fit_hot_fire, s.test, copy.deepcopy(s.cfg), fuel, ox or None)
+                    s.hot_fit = await run.io_bound(calibrate.fit_hot_fire, s.test, copy.deepcopy(s.cfg), ox, fuel or None)
                 except Exception as error:
                     s.hot_fit = None
                     ui.notify(str(error), type='negative', multi_line=True)
                 note.dismiss()
                 fitted.refresh()
             with ui.row().classes('items-center gap-4'):
-                number('연료 소모량', s.hot_masses, 'fuel', 'kg', step=0.01, width='w-36')
                 number('산화제 소모량', s.hot_masses, 'ox', 'kg', step=0.05, width='w-36')
-                ui.button('계수 정하기', icon='auto_fix_high', color=None, on_click=fit_now).props('unelevated rounded no-caps').classes('cta')
-            ui.label('연료 소모량은 연소 전후에 잰 그레인 질량의 차이입니다. 산화제 소모량을 비워 두면 후퇴율 계수만 정합니다.').classes('hint')
+                number('연료 소모량', s.hot_masses, 'fuel', 'kg', step=0.01, width='w-36')
+                ui.button('효율 정하기', icon='auto_fix_high', color=None, on_click=fit_now).props('unelevated rounded no-caps').classes('cta')
+            ui.label('연료 소모량은 연소 전후에 잰 그레인 질량의 차이입니다. 비워 두면 고른 후퇴율 식으로 계산한 값을 씁니다.').classes('hint')
             fitted()
 
     # ---------------------------------------------------------------- 내보내기

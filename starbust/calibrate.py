@@ -11,9 +11,9 @@
 
 벤트의 토출계수는 밸브를 닫아 둔 탱크에서 벤트로만 빠지는 구간의 자료로 따로 정한다(fit_vent).
 
-연소시험으로는 후퇴율 계수와 특성속도 효율을 정한다(fit_hot_fire). 공급라인과 인젝터의 계수는 분사시험에서 정한 값을 그대로 둔다.
-    1) 후퇴율 계수 a     계산한 연료 소모량이 연소 전후에 잰 그레인 질량의 차이와 같아지는 값(지수 n 은 입력 그대로)
-    2) 특성속도 효율     계측한 연소실 압력의 적분과 소모한 추진제 질량에서: eta = ∫ Pc At dt / ((m_ox + m_f) c*)
+연소시험으로는 특성속도 효율을 정한다(fit_hot_fire). 계측한 연소실 압력의 적분과 소모한 추진제 질량에서 구한다:
+    eta = ∫ Pc At dt / ((m_ox + m_f) c*)
+후퇴율 식은 입력에서 고른 것(fuels.py 의 문헌 식이나 직접 적은 값)을 그대로 쓰고, 공급라인과 인젝터의 계수는 분사시험에서 정한 값을 그대로 둔다.
 """
 import math
 
@@ -202,45 +202,6 @@ def fit_vent(test, cfg, t0, t1):
     return {**out, 'Cd': Cd, 'method': 'mass_only' if has_m else 'pressure', 'mdot': float(mass[0] - mass[-1]) / (t1 - t0)}
 
 
-def regression_coefficient(cfg, fuel_kg, lo=1e-3, hi=0.5, tol=1e-4):
-    """후퇴율 계수 a. 계산한 연료 소모량이 fuel_kg(연소 전후에 잰 그레인 질량의 차이)와 같아지는 값을 찾는다.
-
-    후퇴율 지수 n 은 입력에 적힌 값을 그대로 둔다. 시험 한 번의 연료 소모량으로는 a 와 n 을 따로 정할 수 없다.
-    a 가 클수록 연료가 많이 타므로(단조) 해가 lo 와 hi 사이에 하나 있다. a 는 자릿수가 넓게 변하므로 ln a 를 미지수로 두고
-    두 끝을 잇는 직선이 0 이 되는 점으로 구간을 좁힌다(할선법, 같은 쪽 끝이 두 번 남으면 그 끝의 값을 반으로 줄이는 Illinois 방식).
-    """
-    def excess(log_a):
-        trial = config.load(cfg)
-        trial['grain']['a'] = math.exp(log_a)
-        result = simulate(trial)
-        return trapezoid(result['mdot_f'], result['t']) - fuel_kg
-    if fuel_kg <= 0.0:
-        raise ValueError('연료 소모량은 0 보다 커야 합니다.')
-    x_lo, x_hi = math.log(lo), math.log(hi)
-    f_lo, f_hi = excess(x_lo), excess(x_hi)
-    if f_hi < 0.0:
-        raise ValueError('후퇴율 계수를 크게 두어도 연료가 그만큼 타지 않습니다. 연료 소모량과 그레인 치수, 충전량을 확인하세요.')
-    if f_lo > 0.0:
-        raise ValueError('후퇴율 계수를 작게 두어도 연료가 그보다 많이 탑니다. 연료 소모량과 그레인 치수를 확인하세요.')
-    x, kept = x_lo, 0
-    for _ in range(40):
-        x = x_lo - f_lo * (x_hi - x_lo) / (f_hi - f_lo)
-        f = excess(x)
-        if abs(f) < tol * fuel_kg:
-            break
-        if f < 0.0:
-            x_lo, f_lo = x, f
-            if kept == -1:
-                f_hi *= 0.5
-            kept = -1
-        else:
-            x_hi, f_hi = x, f
-            if kept == 1:
-                f_lo *= 0.5
-            kept = 1
-    return math.exp(x)
-
-
 def chamber_efficiency(test, cfg, ox_kg, fuel_kg, choked=2.0):
     """특성속도 효율. 계측한 연소실 압력(절대압)의 적분과 소모한 추진제 질량에서 구한다.
 
@@ -269,23 +230,26 @@ def chamber_efficiency(test, cfg, ox_kg, fuel_kg, choked=2.0):
             'integral_bar_s': integral / 1e5, 't0': t0, 't1': t1, 'At': s.At, 'ox_kg': ox_kg}
 
 
-def fit_hot_fire(test, cfg, fuel_kg, ox_kg=None):
-    """연소시험으로 후퇴율 계수와 특성속도 효율을 정한다.
+def fit_hot_fire(test, cfg, ox_kg, fuel_kg=None):
+    """연소시험으로 특성속도 효율을 정한다. 후퇴율 식은 입력에 적힌 것을 그대로 쓴다.
 
-    fuel_kg 는 연료 소모량(연소 전후에 잰 그레인 질량의 차이), ox_kg 는 연소실로 들어간 산화제 질량이다.
-    ox_kg 가 없거나 시험 자료에 연소실 압력이 없으면 후퇴율 계수만 정한다(효율은 입력 그대로).
-    효율이 바뀌면 연소실 압력과 산화제 유량이 조금 달라지므로 효율을 넣은 뒤에 후퇴율 계수를 구한다.
-    돌려주는 ox_calc_kg 는 정한 계수로 계산했을 때 압력을 적분한 구간에 연소실로 들어간 산화제 질량이다.
-    충전량에서 벤트로 나간 양과 탱크에 증기로 남은 양을 뺀 값이어서 ox_kg 를 정할 때 참고한다.
+    ox_kg 는 연소실로 들어간 산화제 질량, fuel_kg 는 연료 소모량(연소 전후에 잰 그레인 질량의 차이)이다.
+    fuel_kg 가 없으면 입력의 후퇴율 식으로 계산한 연료 소모량을 쓴다(fuel_measured 가 거짓).
+    정한 효율로 한 번 더 계산해 두 값을 함께 돌려준다.
+        fuel_calc_kg   계산한 연료 소모량. 잰 값과 견주면 고른 후퇴율 식이 이 모터에 맞는지 볼 수 있다
+        ox_calc_kg     압력을 적분한 구간에 연소실로 들어간 산화제 질량. 충전량에서 벤트로 나간 양과 탱크에 증기로 남은 양을 뺀 값이어서
+                       ox_kg 를 정할 때 참고한다
     """
     cfg = config.load(cfg)
-    out = {'eta': None, 'fuel_kg': fuel_kg, 'n': cfg['grain']['n']}
-    if ox_kg and 'P_c' in test:
-        out.update(chamber_efficiency(test, cfg, ox_kg, fuel_kg))
-        cfg['chamber']['eta_cstar'] = out['eta']
-    out['a'] = cfg['grain']['a'] = regression_coefficient(cfg, fuel_kg)
-    if out['eta'] is not None:
+    measured = fuel_kg is not None
+    if not measured:
         result = simulate(cfg)
-        sel = (result['t'] >= out['t0']) & (result['t'] <= out['t1'])
-        out['ox_calc_kg'] = float(trapezoid(result['mdot_ox'][sel], result['t'][sel]))
+        fuel_kg = float(trapezoid(result['mdot_f'], result['t']))
+    out = chamber_efficiency(test, cfg, ox_kg, fuel_kg)
+    cfg['chamber']['eta_cstar'] = out['eta']
+    result = simulate(cfg)
+    sel = (result['t'] >= out['t0']) & (result['t'] <= out['t1'])
+    out.update({'fuel_kg': fuel_kg, 'fuel_measured': measured,
+                'fuel_calc_kg': float(trapezoid(result['mdot_f'], result['t'])),
+                'ox_calc_kg': float(trapezoid(result['mdot_ox'][sel], result['t'][sel]))})
     return out

@@ -216,8 +216,8 @@ def test_vent_coefficient_from_closed_valve_test():
         calibrate.fit_vent({'t': t, 'F': P}, guess, 1.0, 11.0)
 
 
-def test_hot_fire_coefficients(hot):
-    """계산 결과를 시험 자료로 삼아 연소시험 보정을 돌리면 입력의 후퇴율 계수와 특성속도 효율이 되나온다."""
+def test_hot_fire_efficiency(hot):
+    """계산 결과를 시험 자료로 삼아 연소시험 보정을 돌리면 입력의 특성속도 효율이 되나온다."""
     from starbust import calibrate
     from starbust._jit import trapezoid as area
     cfg = starbust.load(EXAMPLES / 'nova_hot_fire.json')
@@ -225,10 +225,31 @@ def test_hot_fire_coefficients(hot):
     ox = area(hot['mdot_ox'], hot['t'])                              # 연소실로 간 산화제(벤트와 탱크에 남은 증기는 뺀 값)
     test = {'t': hot['t'], 'P_c': hot['P_c']}
     guess = starbust.load(EXAMPLES / 'nova_hot_fire.json')
-    guess['grain']['a'], guess['chamber']['eta_cstar'] = 0.03, 0.8
-    fit = calibrate.fit_hot_fire(test, guess, fuel, ox)
-    assert fit['a'] == pytest.approx(cfg['grain']['a'], rel=0.02)
+    guess['chamber']['eta_cstar'] = 0.8                              # 처음에 적어 둔 효율은 결과에 영향을 주지 않는다
+    fit = calibrate.fit_hot_fire(test, guess, ox, fuel)
     assert fit['eta'] == pytest.approx(cfg['chamber']['eta_cstar'], rel=0.03)      # 이론 c* 를 전체 혼합비 하나로 잡는 데서 오는 차이
-    only_a = calibrate.fit_hot_fire({'t': hot['t']}, cfg, fuel)
-    assert only_a['eta'] is None and only_a['a'] == pytest.approx(cfg['grain']['a'], rel=0.01)
+    assert fit['fuel_measured'] and fit['fuel_calc_kg'] == pytest.approx(fuel, rel=0.02)
+    no_fuel = calibrate.fit_hot_fire(test, cfg, ox)                  # 잰 연료 소모량이 없으면 계산한 값을 쓴다
+    assert not no_fuel['fuel_measured'] and no_fuel['eta'] == pytest.approx(cfg['chamber']['eta_cstar'], rel=0.03)
+    with pytest.raises(ValueError):
+        calibrate.fit_hot_fire({'t': hot['t']}, cfg, ox, fuel)       # 연소실 압력이 없는 자료
+
+
+def test_regression_presets(hot):
+    """후퇴율 식을 이름으로 고르면 그 식의 계수를 쓰고, 압력 지수가 0 이면 결과는 압력 항이 없을 때와 같다."""
+    from starbust import fuels
+    cfg = starbust.load(EXAMPLES / 'nova_hot_fire.json')
+    assert cfg['grain']['fuel'] == 'HDPE' and cfg['grain']['m'] == 0.0
+    named = starbust.load(dict(cfg, grain=dict(cfg['grain'], regression='ito_integral')))
+    assert (named['grain']['a'], named['grain']['n'], named['grain']['m']) == (0.0763, 0.42, 0.0)
+    same = starbust.simulate(dict(cfg, grain=dict(cfg['grain'], regression='custom', m=0.0)))
+    assert np.array_equal(same['P_c'], hot['P_c']) and np.array_equal(same['mdot_f'], hot['mdot_f'])
+    pressure = starbust.simulate(dict(cfg, grain=dict(cfg['grain'], regression='ito_pressure')))
+    assert pressure['meta'].get('unconverged_steps', 0) == 0
+    burned = trapezoid(pressure['mdot_f'], pressure['t'])
+    assert burned == pytest.approx(0.184, abs=0.005)                 # 압력 항이 없으면(m = 0) 0.137 kg
+    for wrong in (dict(regression='no_such'), dict(fuel='wax')):
+        with pytest.raises(ValueError):
+            starbust.load(dict(cfg, grain=dict(cfg['grain'], **wrong)))
+    assert set(fuels.FUELS['HDPE']['regression']) >= {'ito_integral', 'ito_pressure', 'doran', 'kamps', 'kau'}
 

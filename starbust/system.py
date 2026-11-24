@@ -65,7 +65,7 @@ def oxidizer_flow(P0, h0, vapor, P2, d, L, phi, K, CdA, model):
 
 
 @njit
-def chamber_balance(P_tank, h_out, vapor, R, Pc0, d, L, phi, K, CdA, model, a, n, rho_f, Lg, N, eta_cstar, At):
+def chamber_balance(P_tank, h_out, vapor, R, Pc0, d, L, phi, K, CdA, model, a, n, m, rho_f, Lg, N, eta_cstar, At):
     """연소실 압력과 산화제 유량을 함께 구한다.
 
     가정한 Pc 에서 산화제 유량과 연료 유량을 구하고, 그 유량이 만드는 압력 g(Pc) 쪽으로 가정을 옮긴다:
@@ -74,6 +74,8 @@ def chamber_balance(P_tank, h_out, vapor, R, Pc0, d, L, phi, K, CdA, model, a, n
     같은 부호로 줄어드는 동안에는 조금씩 키운다(최대 1).
     배압이 오르면 산화제 유량이 줄어 g 가 작아지므로 g - Pc 는 Pc 가 커질수록 작아지고 해는 하나다. 그래서 차이가 양수였던
     가장 큰 Pc 와 음수였던 가장 작은 Pc 를 기억해 두고(해가 든 구간), 옮긴 값이 이 구간을 벗어나면 구간의 가운데로 잡는다.
+    후퇴율 식에 압력 항 (Pc / 1 MPa)^m 이 있으면 Pc 가 오를 때 연료 유량이 조금 늘어난다. 연료는 전체 유량의 일부이고 문헌의 m 은 1 보다 작아서
+    g - Pc 는 그래도 Pc 가 커질수록 작아진다.
     돌려주는 값: Pc, mdot_ox, mdot_f, O/F, r_dot, P1, x1, 반복 횟수, 수렴 여부
     """
     lo, hi = PC_FLOOR, P_tank                       # Pc = P_tank 에서는 유량이 0 이어서 g - Pc < 0
@@ -86,7 +88,7 @@ def chamber_balance(P_tank, h_out, vapor, R, Pc0, d, L, phi, K, CdA, model, a, n
     for _ in range(PC_ITERATIONS):
         count += 1
         mdot_ox, P1, x1 = oxidizer_flow(P_tank, h_out, vapor, Pc, d, L, phi, K, CdA, model)
-        r_dot, mdot_f = fuel_flow(mdot_ox, R, a, n, rho_f, Lg, N)
+        r_dot, mdot_f = fuel_flow(mdot_ox, R, a * (Pc / 1.0e6) ** m, n, rho_f, Lg, N)
         g, OF = chamber_pressure(mdot_ox, mdot_f, eta_cstar, At, Pc)
         residual = g - Pc
         if abs(residual) <= PC_TOL * Pc:
@@ -136,7 +138,7 @@ def simulate(cfg, progress=None):
         h_out = h_v if vapor else h_l                    # 탱크에서 나가는 유체: 액체가 남아 있으면 포화 액체, 아니면 포화 증기
         if s.hot:
             Pc, mdot_ox, mdot_f, OF, r_dot, P1, x1, count, converged = chamber_balance(
-                P, h_out, vapor, R, Pc, d, L, phi, K, s.inj_CdA, s.model, s.a, s.n, s.rho_f, s.Lg, s.N, s.eta_cstar, s.At)
+                P, h_out, vapor, R, Pc, d, L, phi, K, s.inj_CdA, s.model, s.a, s.n, s.m, s.rho_f, s.Lg, s.N, s.eta_cstar, s.At)
             unconverged += not converged
             F, cf = nozzle.thrust(Pc, OF, s.eps, s.Pa, s.At, s.half_angle, s.eta_n)[:2]      # 3) 추력
         else:

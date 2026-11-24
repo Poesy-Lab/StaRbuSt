@@ -9,7 +9,9 @@
     vent        벤트 오리피스의 d_mm 과 토출계수 Cd. 벤트가 없으면 항목을 빼거나 null
     feedline    공급라인 요소를 상류부터 적은 목록(feedline.build 참조). 빈 목록이면 탱크 상태를 그대로 인젝터 입구로 쓴다
     injector    오리피스 d_mm, 개수 n, 토출계수 Cd, 유량식 model ("SPI", "HEM", "Dyer", "FML")
-    grain       포트 처음 반지름 R0_mm, 길이 L_mm, 포트 수 N, 후퇴율 r[mm/s] = a G_ox[kg/(m2 s)]^n 의 a 와 n, 연료 밀도 rho_kg_m3
+    grain       포트 처음 반지름 R0_mm, 길이 L_mm, 포트 수 N, 연료 fuel, 후퇴율 식 regression
+                후퇴율은 r[mm/s] = a G_ox[kg/(m2 s)]^n (Pc/1 MPa)^m 이다. regression 에 문헌 식의 이름(fuels.py)을 적으면 그 식의 a, n, m 을 쓰고,
+                "custom" 이면(또는 적지 않으면) 여기에 적은 a, n, m(없으면 0)을 쓴다. 연료 밀도 rho_kg_m3 는 적지 않으면 연료의 값이다
     chamber     특성속도 효율 eta_cstar
     nozzle      목 지름 Dt_mm, 출구 지름 De_mm, 확대부 반각 half_angle_deg, 노즐 효율 eta
     time        시간 간격 dt_s, 끝 시각 t_end_s
@@ -20,7 +22,7 @@ import math
 import pathlib
 from types import SimpleNamespace
 
-from . import feedline, injector, props
+from . import feedline, fuels, injector, props
 
 DEFAULTS = {
     'name': '',
@@ -41,6 +43,8 @@ def load(source):
             cfg[key] = copy.deepcopy(value)
         elif isinstance(value, dict) and isinstance(cfg[key], dict):
             cfg[key] = {**value, **cfg[key]}
+    if isinstance(cfg.get('grain'), dict):
+        fuels.resolve(cfg['grain'])                  # 연료와 후퇴율 식의 이름을 확인하고 a, n, m 을 채운다
     return cfg
 
 
@@ -82,7 +86,8 @@ def to_si(cfg):
         s.N = float(g['N'])
         s.a = g['a'] * 1e-3                          # mm/s 기준의 a 를 m/s 기준으로
         s.n = g['n']
-        s.rho_f = g.get('rho_kg_m3', 935.0)          # HDPE (화학 평형 표를 만든 반응물과 같은 값)
+        s.m = g['m']                                 # 압력 지수(압력 항이 없는 식은 0)
+        s.rho_f = g['rho_kg_m3']
         s.eta_cstar = cfg['chamber']['eta_cstar']
         z = cfg['nozzle']
         s.At = math.pi * (z['Dt_mm'] * 1e-3) ** 2 / 4

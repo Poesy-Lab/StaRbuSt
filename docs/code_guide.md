@@ -28,12 +28,13 @@
 | `tank.py` | 83 | 탱크의 상태 계산, 벤트 유량 | (1.2)–(1.9) |
 | `feedline.py` | 146 | 공급라인의 압력 강하와 초킹 | (2.3)–(2.15) |
 | `injector.py` | 168 | 인젝터의 이론 질량유속과 유량식 네 가지 | (3.4)–(3.22) |
-| `chamber.py` | 116 | 후퇴율, 연소실 압력, 화학 평형 표 | (4.3)–(4.16) |
+| `chamber.py` | 117 | 후퇴율, 연소실 압력, 화학 평형 표 | (4.3)–(4.16) |
 | `nozzle.py` | 59 | 추력계수와 추력 | (5.12)–(5.17) |
-| `system.py` | 205 | 요소 결합과 시간 적분 | 결합 절 |
-| `config.py` | 94 | 입력 파일 읽기, 단위 환산 | |
+| `system.py` | 207 | 요소 결합과 시간 적분 | 결합 절 |
+| `config.py` | 99 | 입력 파일 읽기, 단위 환산 | |
 | `testdata.py` | 90 | 시험 자료 읽기 | |
-| `calibrate.py` | 291 | 시험으로 계수 보정(분사시험, 연소시험, 벤트 시험) | |
+| `calibrate.py` | 255 | 시험으로 계수 보정(분사시험, 연소시험, 벤트 시험) | |
+| `fuels.py` | 60 | 연료와 문헌 후퇴율 식의 프리셋 | |
 | `export.py` | 68 | 결과 내보내기, 계측과 비교 | |
 | `_jit.py` | 68 | numba 번역과 그 저장 | |
 
@@ -508,6 +509,8 @@ def chamber_pressure(mdot_ox, mdot_f, eta_cstar, At, Pc_guess):
 
 후퇴율 계수 $a$의 단위에 주의한다. 입력 파일에는 후퇴율이 mm/s로 나오는 값(예: 0.055)을 적고 `config.to_si`가 10⁻³을 곱해 m/s 기준으로 바꿔 넘긴다. `chamber_pressure`는 특성속도를 가정한 압력 `Pc_guess`에서 읽으므로 돌려주는 압력은 가정에 조금 의존한다. 이 의존성은 8절의 반복이 푼다.
 
+후퇴율 식에 연소실 압력 항이 있으면 $\dot r = a\,G_{ox}^{\,n}\,(P_c/1\,\mathrm{MPa})^m$이다. `fuel_flow`는 그대로 두고 `chamber_balance`가 $a$에 압력 항을 곱해 넘긴다. 압력 항이 없는 식은 $m = 0$이어서 곱하는 값이 1이다. 문헌의 식은 `fuels.py`에 이름을 붙여 모아 두었고 입력의 `grain.regression`으로 고른다. 지금 들어 있는 연료는 HDPE 하나이고, 화학 평형 표도 N₂O/HDPE의 표다.
+
 ### 6.4 계산 예
 
 산화제 유량 0.31 kg/s, 포트 7개, 포트 반지름 7.5 mm, 그레인 길이 230 mm, $a$ = 0.055, $n$ = 0.48, 연료 밀도 935 kg/m³, 노즐 목 지름 17 mm(면적 227.0 mm²), 특성속도 효율 0.95를 넣는다.
@@ -607,7 +610,7 @@ def oxidizer_flow(P0, h0, vapor, P2, d, L, phi, K, CdA, model):
 
 ```python
 @njit
-def chamber_balance(P_tank, h_out, vapor, R, Pc0, d, L, phi, K, CdA, model, a, n, rho_f, Lg, N, eta_cstar, At):
+def chamber_balance(P_tank, h_out, vapor, R, Pc0, d, L, phi, K, CdA, model, a, n, m, rho_f, Lg, N, eta_cstar, At):
     lo, hi = PC_FLOOR, P_tank
     Pc = Pc0 if lo < Pc0 < hi else 0.5 * P_tank
     omega = OMEGA
@@ -618,7 +621,7 @@ def chamber_balance(P_tank, h_out, vapor, R, Pc0, d, L, phi, K, CdA, model, a, n
     for _ in range(PC_ITERATIONS):
         count += 1
         mdot_ox, P1, x1 = oxidizer_flow(P_tank, h_out, vapor, Pc, d, L, phi, K, CdA, model)
-        r_dot, mdot_f = fuel_flow(mdot_ox, R, a, n, rho_f, Lg, N)
+        r_dot, mdot_f = fuel_flow(mdot_ox, R, a * (Pc / 1.0e6) ** m, n, rho_f, Lg, N)
         g, OF = chamber_pressure(mdot_ox, mdot_f, eta_cstar, At, Pc)
         residual = g - Pc
         if abs(residual) <= PC_TOL * Pc:
@@ -750,12 +753,9 @@ def discharge_coefficient(test, cfg, t0, t1):
 
 2026년 분사시험 1의 0.8–3.0 s 구간으로 정한 값은 HEM 기준 토출계수 0.564, 마찰 보정계수 4.63이고 이때 인젝터 입구 압력의 제곱 평균 오차는 0.04 bar다. 같은 계수로 분사시험 2를 계산하면 인젝터 입구 압력의 제곱 평균 오차는 0.10 bar이고 유량은 로드셀 값보다 9 % 크다.
 
-연소시험에서는 후퇴율 계수와 특성속도 효율을 정한다(`fit_hot_fire`). 공급라인과 인젝터의 계수는 분사시험에서 정한 값을 그대로 둔다.
+연소시험에서는 특성속도 효율 $\eta_{c^*}$를 정한다(`fit_hot_fire`). 후퇴율 식은 입력에서 고른 것을 쓰고, 공급라인과 인젝터의 계수는 분사시험에서 정한 값을 그대로 둔다. 연소실 압력의 식 $P_c = \eta_{c^*} c^* \dot m / A_t$를 연소 시간 전체에 대해 적분하면 $\eta_{c^*} = \int P_c A_t\,dt \,/\, \big((m_{ox} + m_f)\,c^*\big)$이다(`chamber_efficiency`). 압력은 계측값, 질량은 연소실로 들어간 산화제와 소모한 연료의 질량, $c^*$는 전체 혼합비 $m_{ox}/m_f$에서의 이론값이다. 유량의 시간 이력을 쓰지 않으므로 공급라인과 인젝터 계산의 오차와 섞이지 않고, 소모한 질량의 오차는 그대로 들어간다. 연료 소모량은 연소 전후에 잰 그레인 질량의 차이를 쓰고, 재지 않았으면 고른 후퇴율 식으로 계산한 값을 쓴다.
 
-1. 후퇴율 계수 $a$. 계산한 연료 소모량 $\int \dot m_f\,dt$가 연소 전후에 잰 그레인 질량의 차이와 같아지는 값이다(`regression_coefficient`). 지수 $n$은 입력값을 그대로 둔다. 시험 한 번의 연료 소모량은 숫자 하나여서 $a$와 $n$을 따로 정할 수 없다.
-2. 특성속도 효율 $\eta_{c^*}$. 연소실 압력의 식 $P_c = \eta_{c^*} c^* \dot m / A_t$를 연소 시간 전체에 대해 적분하면 $\eta_{c^*} = \int P_c A_t\,dt \,/\, \big((m_{ox} + m_f)\,c^*\big)$이다(`chamber_efficiency`). 압력은 계측값, 질량은 소모한 산화제와 연료의 질량, $c^*$는 전체 혼합비 $m_{ox}/m_f$에서의 이론값이다. 유량의 시간 이력을 쓰지 않으므로 공급라인과 인젝터 계산의 오차와 섞이지 않고, 소모한 질량의 오차는 그대로 들어간다.
-
-2026년 연소시험의 기록(연료 소모량 0.20 kg, 산화제 1.0 kg)을 넣으면 압력 적분은 72.1 bar·s이고 계측에서 구한 특성속도는 72.1×10⁵ × 227.0×10⁻⁶ / 1.20 = 1364 m/s다. 혼합비 5.0의 이론값 1574 m/s로 나누면 효율은 0.87이고, 이때 후퇴율 계수는 0.058이다. 산화제 가운데 벤트로 나간 양과 탱크에 증기로 남은 양은 연소실을 지나지 않는다. 계산에서 이 구간에 연소실로 들어간 산화제는 0.94 kg이고 이 값을 쓰면 효율은 0.92다.
+2026년 연소시험의 기록(산화제 1.0 kg, 연료 소모량 0.20 kg)을 넣으면 압력 적분은 72.1 bar·s이고 계측에서 구한 특성속도는 72.1×10⁵ × 227.0×10⁻⁶ / 1.20 = 1364 m/s다. 혼합비 5.0의 이론값 1574 m/s로 나누면 효율은 0.87이다. 산화제 가운데 벤트로 나간 양과 탱크에 증기로 남은 양은 연소실을 지나지 않는다. 계산에서 이 구간에 연소실로 들어간 산화제는 0.94 kg이고 이 값을 쓰면 효율은 0.92다.
 
 ### 9.3 비교와 내보내기
 
@@ -773,14 +773,14 @@ def discharge_coefficient(test, cfg, t0, t1):
   "vent":     {"d_mm": 1.5875, "Cd": 0.1},
   "feedline": [ ... ],
   "injector": {"d_mm": 1.4, "n": 28, "Cd": 0.564, "model": "HEM"},
-  "grain":    {"R0_mm": 7.5, "L_mm": 230, "N": 7, "a": 0.055, "n": 0.48, "rho_kg_m3": 935},
+  "grain":    {"R0_mm": 7.5, "L_mm": 230, "N": 7, "fuel": "HDPE", "regression": "custom", "a": 0.055, "n": 0.48},
   "chamber":  {"eta_cstar": 0.95},
   "nozzle":   {"Dt_mm": 17, "De_mm": 35, "half_angle_deg": 15, "eta": 1.0},
   "time":     {"dt_s": 0.01, "t_end_s": 30}
 }
 ```
 
-`mode`는 `"cold_flow"`(분사시험)와 `"hot_fire"`(연소시험) 가운데 하나다. `config.load`가 빠진 항목을 기본값으로 채우고 `config.to_si`가 SI 값으로 바꾼다. 탱크의 처음 상태는 온도(`T_C`)나 압력(`P_bar`) 가운데 하나로 준다.
+`mode`는 `"cold_flow"`(분사시험)와 `"hot_fire"`(연소시험) 가운데 하나다. `grain.regression`에 문헌 식의 이름(`fuels.py`)을 적으면 `a`, `n`, `m`은 그 식의 값으로 채워지고, `"custom"`이면 적은 값을 쓴다. `config.load`가 빠진 항목을 기본값으로 채우고 `config.to_si`가 SI 값으로 바꾼다. 탱크의 처음 상태는 온도(`T_C`)나 압력(`P_bar`) 가운데 하나로 준다.
 
 화면은 NiceGUI로 만들었고 시작, 입력, 결과, 시험 비교, 내보내기의 다섯 화면이다. 화면 코드는 계산을 직접 하지 않고 계산 코드의 함수를 부른다. 계산은 `starbust.simulate`와 `starbust.summary`, 계수 보정은 `calibrate.fit`·`fit_hot_fire`·`fit_vent`, 비교와 내보내기는 `export.compare`·`to_csv`·`to_eng`, 시험 자료는 `testdata.load`가 맡는다. 계산 코드는 화면이 있는지 모르므로 같은 계산을 스크립트에서 그대로 쓸 수 있다.
 

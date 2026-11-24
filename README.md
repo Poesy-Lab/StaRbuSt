@@ -1,5 +1,7 @@
 # StaRbuSt
 
+<img src="docs/screens/logo.png" alt="StaRbuSt" width="420">
+
 **S**imulation **t**ool for **a**dvanced **R**ocket **bu**rning with nitrou**S** oxide propellan**t**
 
 자발가압 아산화질소(N₂O) 하이브리드 로켓의 탱크 압력, 산화제 유량, 연소실 압력, 추력을 계산하는 프로그램이다.
@@ -75,10 +77,10 @@ print(starbust.summary(result))
 |---|---|
 | `starbust/` | 계산 코드. 요소마다 파일 하나: `tank`, `feedline`, `injector`, `chamber`, `nozzle`, 그리고 이들을 잇는 `system` |
 | `starbust/data/` | N₂O 포화 물성표(CoolProp으로 계산), N₂O/HDPE 화학 평형 표(NASA CEA로 계산) |
-| `app/` | 화면(NiceGUI). `main.py`가 화면, `icons.py`가 아이콘과 계통도, `equations.json`이 화면에 보이는 수식과 기호 |
+| `app/` | 화면(NiceGUI). `main.py`가 화면, `icons.py`가 아이콘과 계통도, `equations.json`이 화면에 보이는 수식과 기호, `assets/`가 로고와 사진 |
 | `examples/` | 입력 예제(JSON) |
 | `testdata/` | 시험 자료(CSV와 설명 JSON) |
-| `tools/` | 표를 만드는 스크립트, 시험 원자료 변환, 시험 비교 스크립트, 화면의 수식을 만드는 스크립트(`make_equations.py`) |
+| `tools/` | 표를 만드는 스크립트, 시험 원자료 변환, 시험 비교 스크립트, 화면의 수식을 만드는 스크립트(`make_equations.py`), 아이콘과 로고를 만드는 스크립트(`make_logo.py`) |
 | `tests/` | 자동 시험(`python3 -m pytest tests -q`) |
 | `packaging/` | 설치 파일을 만드는 스크립트와 아이콘 |
 | `docs/` | 코드 해설(`code_guide.md`)과 그림 |
@@ -144,8 +146,21 @@ print(starbust.summary(result))
 - 화학 평형 표는 N₂O와 HDPE 조합이다.
 - numba로 번역한 결과는 `starbust/__pycache__/numba-…` 폴더에 저장한다. 소스나 표가 바뀌면 새 폴더에 다시 번역한다.
 
+## 만든 곳
+
+StaRbuSt는 한국항공대학교 로켓동아리 SRS(The Society of Rocket Study)에서 하이브리드 로켓을 설계하고 지상시험 결과와 견주어 보려고 만들었다. SRS는 2025년과 2026년에 일본 노시로 로켓대회에 출전했고, 이 저장소의 예제와 시험 자료(`testdata/`)는 2026년 NOVA 지상시험의 것이다. MATLAB으로 만든 이전 판은 [StaRbuSt_mvp](https://github.com/Poesy-Lab/StaRbuSt_mvp)에 있다.
+
+| 지상 연소시험 (2025) | 노시로 로켓대회 (2025) | 노시로 로켓대회 (2026) |
+|---|---|---|
+| ![2025년 지상 연소시험](app/assets/photos/hotfire_2025.jpg) | ![2025년 노시로 로켓대회](app/assets/photos/noshiro_2025.jpg) | ![2026년 노시로 로켓대회](app/assets/photos/noshiro_2026.jpg) |
+
+- [2025 일본 노시로 대회 준비기](https://blog.naver.com/wdh3168/223986008141)
+- [KAU SRS 유튜브](https://www.youtube.com/@KAU_SRS_Rocket/videos)
+
+아이콘의 큰 별은 예전의 액체로켓 프로젝트 Polaris(북극성)에서, 붉은 궤적은 SRS의 예전 로고에서 가져왔다. 글자는 대문자 S, R, S만 붉게 칠했다. 앱 왼쪽 아래의 SRS 로고를 누르면 사진을 더 볼 수 있다.
+
 ## 버전과 라이선스
 
 버전 번호는 `starbust/__init__.py`의 `__version__` 한 곳에 적는다. 화면 왼쪽 아래와 설치 파일의 이름, 추력 곡선 파일(.eng)의 첫 줄에 이 번호가 들어간다.
 
-코드는 MIT 라이선스다(`LICENSE`). 수식 글꼴과 SRS 로고, 설치 파일에 함께 들어가는 패키지의 라이선스는 `THIRD_PARTY.md`에 적었다.
+코드는 MIT 라이선스다(`LICENSE`). 수식 글꼴과 SRS 로고, 사진, 설치 파일에 함께 들어가는 패키지의 라이선스는 `THIRD_PARTY.md`에 적었다.

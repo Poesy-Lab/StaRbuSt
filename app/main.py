@@ -65,8 +65,9 @@ body {{ background: var(--bg); color: {INK}; font-family: {FONT}; transition: ba
 .rail::before {{ width: 270px; height: 270px; right: -150px; top: -90px; background: rgba(255, 255, 255, .13); }}
 .rail::after {{ width: 230px; height: 230px; left: -120px; bottom: 70px; background: rgba(255, 255, 255, .08); }}
 .rail > * {{ position: relative; z-index: 1; }}
-.brand {{ width: 172px; display: block; margin: 0 6px; }}
-.tagline {{ font-size: 12.5px; opacity: .9; margin: 8px 8px 26px; letter-spacing: .2px; }}
+.brand {{ display: block; margin: 0 2px; padding: 9px 13px 9px 8px; border-radius: 16px; background: #fff; box-shadow: 0 8px 20px rgba(var(--shadow), .26); }}
+.brand img {{ display: block; width: 100%; }}
+.tagline {{ font-size: 12.5px; opacity: .92; margin: 10px 8px 24px; letter-spacing: .2px; text-align: center; }}
 .navs {{ display: flex; flex-direction: column; gap: 6px; }}
 .nav {{ display: flex; align-items: center; gap: 12px; padding: 11px 14px; border-radius: 14px; cursor: pointer; font-size: 15.5px; font-weight: 600;
        color: rgba(255, 255, 255, .96); transition: background .15s; }}
@@ -78,8 +79,11 @@ body {{ background: var(--bg); color: {INK}; font-family: {FONT}; transition: ba
             background: rgba(255, 255, 255, .20); border: 1px solid rgba(255, 255, 255, .38); }}
 .modepill small {{ display: block; font-size: 11px; font-weight: 500; opacity: .9; white-space: nowrap; }}
 .rail .grow {{ flex: 1; }}
-.srs {{ width: 150px; margin: 0 10px 6px; filter: brightness(0) invert(1); opacity: .92; display: block; }}
-.version {{ margin: 4px 12px 0; font-size: 12px; font-weight: 600; letter-spacing: .4px; opacity: .85; }}
+.credit {{ display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; border-radius: 14px; padding: 8px 4px 4px; transition: background .15s; }}
+.credit:hover {{ background: rgba(255, 255, 255, .12); }}
+.srs {{ width: 150px; filter: brightness(0) invert(1); opacity: .92; display: block; }}
+.version {{ padding: 2px 12px; border-radius: 999px; font-size: 12px; font-weight: 700; letter-spacing: .6px;
+           background: rgba(255, 255, 255, .18); border: 1px solid rgba(255, 255, 255, .36); }}
 .main {{ flex: 1; min-width: 0; padding: 26px 30px 56px; }}
 .ico {{ flex: none; display: block; }}
 .ico .s {{ fill: none; stroke: currentColor; stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }}
@@ -105,6 +109,20 @@ body {{ background: var(--bg); color: {INK}; font-family: {FONT}; transition: ba
 .hero .title {{ font-size: 25px; font-weight: 800; letter-spacing: -.3px; }}
 .hint {{ color: {MUTED}; font-size: 14px; line-height: 1.6; }}
 .hint math {{ font-size: 15.5px; color: var(--deep); }}
+.about {{ width: 660px; max-width: 92vw; border-radius: 24px; padding: 22px 24px 20px; gap: 14px; }}
+.about-head {{ display: flex; align-items: center; gap: 12px; }}
+.about-head img {{ width: 52px; height: 52px; }}
+.about-head b {{ font-size: 24px; font-weight: 800; letter-spacing: -.3px; color: #17324F; }}
+.about-head b i {{ font-style: normal; color: #E0352B; }}
+.about-head span {{ margin-left: 6px; font-size: 13px; font-weight: 700; color: var(--deep); background: var(--tint); border-radius: 999px; padding: 2px 10px; }}
+.about-head small {{ display: block; font-size: 13px; color: {MUTED}; margin-top: 1px; }}
+.shot {{ position: relative; width: 100%; height: 100%; margin: 0; }}
+.shot img {{ width: 100%; height: 100%; object-fit: cover; display: block; }}
+.shot figcaption {{ position: absolute; left: 14px; top: 12px; padding: 4px 12px; border-radius: 999px; font-size: 13px; font-weight: 600;
+                   color: #fff; background: rgba(15, 30, 48, .55); }}
+.about .q-carousel {{ border-radius: 16px; width: 100%; }}
+.about a {{ color: var(--deep); font-weight: 600; text-decoration: none; }}
+.about a:hover {{ text-decoration: underline; }}
 .badge {{ width: 52px; height: 52px; border-radius: 16px; display: flex; align-items: center; justify-content: center; flex: none;
          background: var(--tint); color: var(--deep); }}
 .badge.cold {{ background: #E6F4FC; color: #17689E; }}
@@ -187,6 +205,11 @@ async function starbustSave(name, text, mime, extension, description) {
 </script>'''
 
 NAV = (('home', '시작'), ('input', '입력'), ('result', '결과'), ('compare', '시험 비교'), ('export', '내보내기'))
+# 왼쪽 아래의 SRS 로고를 누르면 나오는 사진(app/assets/photos)과 링크
+PHOTOS = (('noshiro_2026', '2026년 일본 노시로 로켓대회'), ('hotfire_2025', '2025년 지상 연소시험'), ('noshiro_2025', '2025년 일본 노시로 로켓대회'),
+          ('teststand_2025', '2025년 지상시험 준비'), ('team_2026', '2026년 SRS'))
+LINKS = (('GitHub', 'https://github.com/Poesy-Lab/StaRbuSt'), ('2025 노시로 대회 준비기', 'https://blog.naver.com/wdh3168/223986008141'),
+         ('KAU SRS 유튜브', 'https://www.youtube.com/@KAU_SRS_Rocket/videos'))
 # 요소마다 보여 줄 수식: (equations.json 의 이름, 카드의 이름, 덧붙이는 말)
 KEY_EQUATIONS = {
     'tank': (('tank_mass', '질량 보존', ''), ('tank_energy', '에너지 보존', '탱크 안은 포화 상태')),
@@ -1059,15 +1082,31 @@ def index(example: str = '', tab: str = 'home', section: str = 'tank'):
         if s.picked:
             ui.html(f'<div class="modepill">{icon(s.picked, 26)}<div>{MODE_NAME[s.picked]} 모드<small>시작에서 다시 고릅니다</small></div></div>', sanitize=False)
 
+    # ---------------------------------------------------------------- 왼쪽 아래의 SRS 로고나 버전을 누르면 열리는 창
+    with ui.dialog() as about, ui.card().classes('about'):
+        ui.html('<div class="about-head"><img src="/assets/mark.svg" alt=""><div><b><i>S</i>ta<i>R</i>bu<i>S</i>t</b>'
+                f'<span>v{starbust.__version__}</span><small>The Society of Rocket Study · 한국항공대학교</small></div></div>', sanitize=False)
+        with ui.carousel(animated=True, arrows=True, navigation=True).props('height=372px infinite swipeable control-color=white'):
+            for name, caption in PHOTOS:
+                with ui.carousel_slide().classes('p-0'):
+                    ui.html(f'<figure class="shot"><img src="/assets/photos/{name}.jpg" alt="{caption}"><figcaption>{caption}</figcaption></figure>', sanitize=False)
+        ui.label('StaRbuSt는 한국항공대학교 로켓동아리 SRS에서 하이브리드 로켓의 설계와 지상시험 분석에 쓰려고 만든 프로그램입니다. '
+                 '아이콘의 큰 별은 예전의 액체로켓 프로젝트 Polaris(북극성)에서, 붉은 궤적은 SRS의 예전 로고에서 가져왔습니다.').classes('hint')
+        with ui.row().classes('w-full items-center gap-5'):
+            for label, url in LINKS:
+                ui.html(f'<a href="{url}" target="_blank" rel="noopener">{label}</a>', sanitize=False)
+            ui.space()
+            ui.button('닫기', on_click=about.close).props('flat rounded no-caps color=primary')
+
     apply_theme()
     with ui.element('div').classes('shell'):
         with ui.element('aside').classes('rail'):
-            ui.html('<img class="brand" src="/assets/logo_light.svg" alt="StaRbuSt"><div class="tagline">N₂O hybrid rocket simulator</div>', sanitize=False)
+            ui.html('<div class="brand"><img src="/assets/logo.svg" alt="StaRbuSt"></div><div class="tagline">N₂O hybrid rocket simulator</div>', sanitize=False)
             with ui.element('nav').classes('navs'):
                 nav()
             ui.element('div').classes('grow')
-            ui.html('<img class="srs" src="/assets/srs_logo.png" alt="The Society of Rocket Study">'
-                    f'<div class="version">버전 {starbust.__version__}</div>', sanitize=False)
+            ui.html('<div class="credit" title="StaRbuSt와 SRS"><img class="srs" src="/assets/srs_logo.png" alt="The Society of Rocket Study">'
+                    f'<div class="version">v{starbust.__version__}</div></div>', sanitize=False).on('click', about.open)
         with ui.element('main').classes('main'):
             with ui.tab_panels(value=s.tab).classes('w-full bg-transparent') as panels:
                 with ui.tab_panel('home'):

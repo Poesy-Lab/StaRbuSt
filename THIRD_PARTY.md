@@ -8,6 +8,7 @@ StaRbuSt의 코드는 MIT 라이선스다(`LICENSE`). 아래는 저장소나 설
 |---|---|---|
 | Latin Modern Math (수식 글꼴) | `app/assets/fonts/` | GUST Font License. 안내문이 같은 폴더에 있다 |
 | SRS 로고 | `app/assets/srs_logo.png` | The Society of Rocket Study의 로고이고 MIT 라이선스의 대상에서 뺀다 |
+| 사진 | `app/assets/photos/` | SRS의 지상시험과 대회 사진이고 MIT 라이선스의 대상에서 뺀다 |
 
 N₂O 포화 물성표와 화학 평형 표(`starbust/data/`)는 CoolProp과 NASA CEA로 계산한 결과다. 표를 만드는 스크립트는 `tools/`에 있다.
 

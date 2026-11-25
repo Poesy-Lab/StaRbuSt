@@ -183,6 +183,16 @@ Ito 외 (2021)는 Ito, Kamps, Nagata의 "Fuel Regression Characteristics in Hybr
 - 화학 평형 표는 N₂O와 HDPE 조합에 대해 계산한 것이다.
 - numba로 컴파일한 결과는 `starbust/__pycache__/numba-…` 폴더에 저장한다. 소스나 표가 바뀌면 다시 컴파일해 새 폴더에 저장한다.
 
+## 피드백과 참여
+
+StaRbuSt는 계속 갱신한다. 써 보면서 생긴 오류, 계산 결과가 시험과 다른 사례, 필요한 기능은 저장소의 [Issues](https://github.com/Poesy-Lab/StaRbuSt/issues)에 남기면 다음 버전에 반영한다. 다른 대학 팀의 의견과 시험 자료를 받아 함께 고쳐 나가려고 한다.
+
+특히 아래 부분은 의견과 자료가 있으면 도움이 된다.
+
+- 다른 연료(파라핀 등)의 밀도와 후퇴율 식, N₂O와의 화학 평형 표
+- 다른 모터의 분사시험·연소시험 자료와 계산 결과의 비교
+- 위 한계에 적은 구간(밸브를 연 직후, 액체가 다 빠진 뒤)의 모델
+
 ## 만든 곳
 
 StaRbuSt는 한국항공대학교 로켓동아리 SRS(The Society of Rocket Study)에서 하이브리드 로켓을 설계하고 계산 결과를 지상시험 결과와 비교하기 위해 만들었다. SRS는 2025년과 2026년에 일본 노시로 로켓대회에 출전했고, 이 저장소의 예제와 시험 자료(`testdata/`)는 2026년 NOVA 지상시험에서 얻은 자료다. MATLAB으로 만든 이전 버전은 [StaRbuSt_mvp](https://github.com/Poesy-Lab/StaRbuSt_mvp)에 있다.
